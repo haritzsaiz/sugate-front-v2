@@ -50,9 +50,18 @@ export const proyectosColumns: ColumnDef<Proyecto>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Dirección' />
     ),
-    cell: ({ row }) => (
-      <div className='max-w-[200px] font-medium'>{row.getValue('direccion')}</div>
-    ),
+    cell: ({ row }) => {
+      const project = row.original
+      return (
+        <Link
+          to='/proyectos/$proyectoId'
+          params={{ proyectoId: project.id }}
+          className='max-w-[200px] font-medium text-blue-600 hover:underline'
+        >
+          {row.getValue('direccion')}
+        </Link>
+      )
+    },
   },
   {
     accessorKey: 'ciudad',

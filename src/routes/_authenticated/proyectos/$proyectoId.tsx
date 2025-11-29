@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { ProyectoEditForm } from '@/features/proyectos/components/proyecto-edit-form'
+import { ProyectoDetail } from '@/features/proyectos/components/proyecto-detail'
 
 export const Route = createFileRoute('/_authenticated/proyectos/$proyectoId')({
-  component: ProyectoEditForm,
+  component: ProyectoDetail,
 })

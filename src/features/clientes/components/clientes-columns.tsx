@@ -1,4 +1,5 @@
 import { type ColumnDef } from '@tanstack/react-table'
+import { Link } from '@tanstack/react-router'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { type Cliente } from '../data/schema'
@@ -34,9 +35,18 @@ export const clientesColumns: ColumnDef<Cliente>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Nombre' />
     ),
-    cell: ({ row }) => (
-      <div className='font-medium'>{row.getValue('nombre')}</div>
-    ),
+    cell: ({ row }) => {
+      const cliente = row.original
+      return (
+        <Link
+          to='/clientes/$clienteId'
+          params={{ clienteId: cliente._id }}
+          className='font-medium text-blue-600 hover:underline'
+        >
+          {row.getValue('nombre')}
+        </Link>
+      )
+    },
   },
   {
     id: 'apellidos',

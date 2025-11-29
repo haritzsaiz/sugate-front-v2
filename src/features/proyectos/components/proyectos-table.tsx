@@ -53,7 +53,7 @@ export function ProyectosTable({ data }: DataTableProps) {
     navigate: route.useNavigate(),
     pagination: { defaultPage: 1, defaultPageSize: 10 },
     globalFilter: { enabled: true, key: 'filter' },
-    columnFilters: [{ key: 'estado', column: 'estado' }],
+    columnFilters: [{ columnId: 'estado', searchKey: 'estado' }],
   })
 
   // eslint-disable-next-line react-hooks/incompatible-library
