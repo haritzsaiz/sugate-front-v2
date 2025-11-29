@@ -13,6 +13,7 @@ import { Route as ClerkRouteRouteImport } from './routes/clerk/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthSilentCallbackRouteImport } from './routes/auth/silent-callback'
+import { Route as AuthLogoutCallbackRouteImport } from './routes/auth/logout-callback'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
 import { Route as errors500RouteImport } from './routes/(errors)/500'
@@ -58,6 +59,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
 const AuthSilentCallbackRoute = AuthSilentCallbackRouteImport.update({
   id: '/auth/silent-callback',
   path: '/auth/silent-callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthLogoutCallbackRoute = AuthLogoutCallbackRouteImport.update({
+  id: '/auth/logout-callback',
+  path: '/auth/logout-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
@@ -216,6 +222,7 @@ export interface FileRoutesByFullPath {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/auth/callback': typeof AuthCallbackRoute
+  '/auth/logout-callback': typeof AuthLogoutCallbackRoute
   '/auth/silent-callback': typeof AuthSilentCallbackRoute
   '/': typeof AuthenticatedIndexRoute
   '/clientes/$clienteId': typeof AuthenticatedClientesClienteIdRoute
@@ -246,6 +253,7 @@ export interface FileRoutesByTo {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/auth/callback': typeof AuthCallbackRoute
+  '/auth/logout-callback': typeof AuthLogoutCallbackRoute
   '/auth/silent-callback': typeof AuthSilentCallbackRoute
   '/': typeof AuthenticatedIndexRoute
   '/clientes/$clienteId': typeof AuthenticatedClientesClienteIdRoute
@@ -280,6 +288,7 @@ export interface FileRoutesById {
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
   '/auth/callback': typeof AuthCallbackRoute
+  '/auth/logout-callback': typeof AuthLogoutCallbackRoute
   '/auth/silent-callback': typeof AuthSilentCallbackRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/clientes/$clienteId': typeof AuthenticatedClientesClienteIdRoute
@@ -312,6 +321,7 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/auth/callback'
+    | '/auth/logout-callback'
     | '/auth/silent-callback'
     | '/'
     | '/clientes/$clienteId'
@@ -342,6 +352,7 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/auth/callback'
+    | '/auth/logout-callback'
     | '/auth/silent-callback'
     | '/'
     | '/clientes/$clienteId'
@@ -375,6 +386,7 @@ export interface FileRouteTypes {
     | '/(errors)/500'
     | '/(errors)/503'
     | '/auth/callback'
+    | '/auth/logout-callback'
     | '/auth/silent-callback'
     | '/_authenticated/'
     | '/_authenticated/clientes/$clienteId'
@@ -407,6 +419,7 @@ export interface RootRouteChildren {
   errors500Route: typeof errors500Route
   errors503Route: typeof errors503Route
   AuthCallbackRoute: typeof AuthCallbackRoute
+  AuthLogoutCallbackRoute: typeof AuthLogoutCallbackRoute
   AuthSilentCallbackRoute: typeof AuthSilentCallbackRoute
 }
 
@@ -438,6 +451,13 @@ declare module '@tanstack/react-router' {
       path: '/auth/silent-callback'
       fullPath: '/auth/silent-callback'
       preLoaderRoute: typeof AuthSilentCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/logout-callback': {
+      id: '/auth/logout-callback'
+      path: '/auth/logout-callback'
+      fullPath: '/auth/logout-callback'
+      preLoaderRoute: typeof AuthLogoutCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/callback': {
@@ -722,6 +742,7 @@ const rootRouteChildren: RootRouteChildren = {
   errors500Route: errors500Route,
   errors503Route: errors503Route,
   AuthCallbackRoute: AuthCallbackRoute,
+  AuthLogoutCallbackRoute: AuthLogoutCallbackRoute,
   AuthSilentCallbackRoute: AuthSilentCallbackRoute,
 }
 export const routeTree = rootRouteImport

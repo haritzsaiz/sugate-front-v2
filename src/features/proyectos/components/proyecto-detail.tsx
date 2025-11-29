@@ -124,9 +124,9 @@ export function ProyectoDetail() {
           <div className='mt-4 flex items-center gap-3'>
             <Badge
               variant='outline'
-              className={projectStatusColors[proyecto.estado as ProjectStatus]}
+              className={projectStatusColors[proyecto.estado as ProjectStatus] ?? 'bg-gray-100 text-gray-800 border-gray-200'}
             >
-              {projectStatusLabels[proyecto.estado as ProjectStatus]}
+              {projectStatusLabels[proyecto.estado as ProjectStatus] ?? proyecto.estado}
             </Badge>
             {cliente && (
               <span className='text-sm text-muted-foreground'>

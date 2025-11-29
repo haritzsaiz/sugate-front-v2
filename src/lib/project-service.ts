@@ -3,8 +3,15 @@ import { Project, CreateProjectData, UpdateProjectData } from './types'
 import { makeRequest, makeFileRequest } from './api-service'
 
 // Core CRUD operations using ApiService functions
-export const getAllProjects = (): Promise<Project[]> => {
-  return makeRequest<Project[]>('/proyectos/v1')
+export const getAllProjects = (
+  filter?: { field: string; value: string; operand?: string }
+): Promise<Project[]> => {
+  let url = '/proyectos/v1'
+  if (filter && filter.field && filter.value) {
+    const operand = filter.operand || 'eq'
+    url += `?filter=${filter.field}[${operand}]${filter.value}`
+  }
+  return makeRequest<Project[]>(url)
 }
 
 export const getProjectById = (id: string): Promise<Project | null> => {

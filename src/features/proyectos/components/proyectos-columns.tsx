@@ -91,13 +91,16 @@ export const proyectosColumns: ColumnDef<Proyecto>[] = [
     ),
     cell: ({ row }) => {
       const status = row.getValue('estado') as ProjectStatus
+      const label = projectStatusLabels[status] ?? status
+      const colorClass = projectStatusColors[status] ?? 'bg-gray-100 text-gray-800 border-gray-200'
+      const icon = statusIcons[status] ?? null
       return (
         <Badge
           variant='outline'
-          className={`flex w-fit items-center gap-1 ${projectStatusColors[status]}`}
+          className={`flex w-fit items-center gap-1 ${colorClass}`}
         >
-          {statusIcons[status]}
-          {projectStatusLabels[status]}
+          {icon}
+          {label}
         </Badge>
       )
     },

@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { useNavigate } from '@tanstack/react-router'
 import { z } from 'zod'
-import { MapPin, Save, X, Loader2, Building } from 'lucide-react'
+import { MapPin, Save, X, Loader2, Building, Check, ChevronsUpDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { createProject } from '@/lib/project-service'
-import { getAllClients, type Client } from '@/lib/client-service'
+import { getAllClients, getClientById, type Client } from '@/lib/client-service'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -18,12 +18,19 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { cn } from '@/lib/utils'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
@@ -43,7 +50,10 @@ export function ProyectoForm() {
   const navigate = useNavigate()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [clientes, setClientes] = useState<Client[]>([])
-  const [loadingClientes, setLoadingClientes] = useState(true)
+  const [selectedCliente, setSelectedCliente] = useState<Client | null>(null)
+  const [loadingClientes, setLoadingClientes] = useState(false)
+  const [clienteOpen, setClienteOpen] = useState(false)
+  const [clienteSearch, setClienteSearch] = useState('')
 
   const form = useForm<ProyectoFormData>({
     resolver: zodResolver(formSchema),
@@ -55,19 +65,67 @@ export function ProyectoForm() {
     },
   })
 
-  useEffect(() => {
-    const fetchClientes = async () => {
-      try {
-        const data = await getAllClients()
-        setClientes(data)
-      } catch (error) {
-        toast.error('Error al cargar clientes')
-      } finally {
-        setLoadingClientes(false)
-      }
+  // Debounced search for clients via API - searches multiple fields in parallel
+  const searchClientes = useCallback(async (searchTerm: string) => {
+    if (!searchTerm.trim()) {
+      setClientes([])
+      return
     }
-    fetchClientes()
+    
+    setLoadingClientes(true)
+    try {
+      // Search across multiple fields in parallel
+      const searchFields = ['nombre_completo', 'dni', 'email', 'telefono']
+      const searchPromises = searchFields.map((field) =>
+        getAllClients({ 
+          field, 
+          value: searchTerm, 
+          operand: 'contains' 
+        }).catch(() => [] as Client[]) // Return empty array on error for individual field
+      )
+      
+      const results = await Promise.all(searchPromises)
+      
+      // Flatten results and remove duplicates by _id
+      const allClients = results.flat()
+      const uniqueClients = Array.from(
+        new Map(allClients.map((client) => [client._id, client])).values()
+      )
+      
+      setClientes(uniqueClients)
+    } catch (error) {
+      console.error('Error searching clients:', error)
+      setClientes([])
+    } finally {
+      setLoadingClientes(false)
+    }
   }, [])
+
+  // Debounce the search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      searchClientes(clienteSearch)
+    }, 300)
+    
+    return () => clearTimeout(timer)
+  }, [clienteSearch, searchClientes])
+
+  // Load selected client data if needed (for edit mode or when form has initial value)
+  useEffect(() => {
+    const clientId = form.getValues('id_cliente')
+    if (clientId && !selectedCliente) {
+      getClientById(clientId).then((client) => {
+        if (client) {
+          setSelectedCliente(client)
+        }
+      })
+    }
+  }, [form, selectedCliente])
+
+  // Get selected client display name
+  const getSelectedClientName = () => {
+    return selectedCliente?.nombre_completo || ''
+  }
 
   const onSubmit = async (data: ProyectoFormData) => {
     try {
@@ -137,9 +195,9 @@ export function ProyectoForm() {
         </div>
 
         <Form {...form}>
-          <form id='proyecto-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
+          <form id='proyecto-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
             {/* Cliente */}
-            <div className='rounded-lg border p-6'>
+            <div>
               <div className='mb-4 flex items-center gap-2'>
                 <Building className='h-5 w-5 text-primary' />
                 <h3 className='text-lg font-medium'>Cliente</h3>
@@ -149,24 +207,86 @@ export function ProyectoForm() {
                   control={form.control}
                   name='id_cliente'
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className='flex flex-col'>
                       <FormLabel>
                         Cliente <span className='text-destructive'>*</span>
                       </FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={loadingClientes ? 'Cargando clientes...' : 'Selecciona un cliente'} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {clientes.map((cliente) => (
-                            <SelectItem key={cliente._id} value={cliente._id}>
-                              {cliente.nombre_completo}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Popover open={clienteOpen} onOpenChange={setClienteOpen}>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant='outline'
+                              role='combobox'
+                              aria-expanded={clienteOpen}
+                              className={cn(
+                                'w-full justify-between font-normal',
+                                !field.value && 'text-muted-foreground'
+                              )}
+                            >
+                              {field.value
+                                ? getSelectedClientName()
+                                : 'Buscar cliente por nombre...'}
+                              <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className='w-[400px] p-0' align='start'>
+                          <Command shouldFilter={false}>
+                            <CommandInput
+                              placeholder='Buscar por nombre, apellido, email, tlf, DNI...'
+                              value={clienteSearch}
+                              onValueChange={setClienteSearch}
+                            />
+                            <CommandList>
+                              {loadingClientes && (
+                                <div className='flex items-center justify-center py-6'>
+                                  <Loader2 className='h-4 w-4 animate-spin' />
+                                  <span className='ml-2 text-sm text-muted-foreground'>Buscando...</span>
+                                </div>
+                              )}
+                              {!loadingClientes && clienteSearch.trim() && clientes.length === 0 && (
+                                <CommandEmpty>No se encontraron clientes.</CommandEmpty>
+                              )}
+                              {!loadingClientes && !clienteSearch.trim() && (
+                                <div className='py-6 text-center text-sm text-muted-foreground'>
+                                  Escribe para buscar clientes...
+                                </div>
+                              )}
+                              {!loadingClientes && clientes.length > 0 && (
+                                <CommandGroup>
+                                  {clientes.map((cliente) => (
+                                    <CommandItem
+                                      key={cliente._id}
+                                      value={cliente._id}
+                                      onSelect={() => {
+                                        field.onChange(cliente._id)
+                                        setSelectedCliente(cliente)
+                                        setClienteOpen(false)
+                                        setClienteSearch('')
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          'mr-2 h-4 w-4',
+                                          field.value === cliente._id ? 'opacity-100' : 'opacity-0'
+                                        )}
+                                      />
+                                      <div className='flex flex-col'>
+                                        <span className='font-medium'>{cliente.nombre_completo}</span>
+                                        <span className='text-xs text-muted-foreground'>
+                                          {[cliente.email, cliente.telefono, cliente.dni]
+                                            .filter(Boolean)
+                                            .join(' • ')}
+                                        </span>
+                                      </div>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              )}
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -175,7 +295,7 @@ export function ProyectoForm() {
             </div>
 
             {/* Ubicación */}
-            <div className='rounded-lg border p-6'>
+            <div>
               <div className='mb-4 flex items-center gap-2'>
                 <MapPin className='h-5 w-5 text-primary' />
                 <h3 className='text-lg font-medium'>Ubicación del Proyecto</h3>
