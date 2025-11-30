@@ -16,6 +16,7 @@ import { Route as AuthLogoutCallbackRouteImport } from './routes/auth/logout-cal
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks/index'
 import { Route as AuthenticatedProyectosIndexRouteImport } from './routes/_authenticated/proyectos/index'
+import { Route as AuthenticatedOficinasIndexRouteImport } from './routes/_authenticated/oficinas/index'
 import { Route as AuthenticatedClientesIndexRouteImport } from './routes/_authenticated/clientes/index'
 import { Route as AuthenticatedProyectosNuevoRouteImport } from './routes/_authenticated/proyectos/nuevo'
 import { Route as AuthenticatedProyectosProyectoIdRouteImport } from './routes/_authenticated/proyectos/$proyectoId'
@@ -55,6 +56,12 @@ const AuthenticatedProyectosIndexRoute =
   AuthenticatedProyectosIndexRouteImport.update({
     id: '/proyectos/',
     path: '/proyectos/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOficinasIndexRoute =
+  AuthenticatedOficinasIndexRouteImport.update({
+    id: '/oficinas/',
+    path: '/oficinas/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedClientesIndexRoute =
@@ -98,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/proyectos/$proyectoId': typeof AuthenticatedProyectosProyectoIdRoute
   '/proyectos/nuevo': typeof AuthenticatedProyectosNuevoRoute
   '/clientes': typeof AuthenticatedClientesIndexRoute
+  '/oficinas': typeof AuthenticatedOficinasIndexRoute
   '/proyectos': typeof AuthenticatedProyectosIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
 }
@@ -111,6 +119,7 @@ export interface FileRoutesByTo {
   '/proyectos/$proyectoId': typeof AuthenticatedProyectosProyectoIdRoute
   '/proyectos/nuevo': typeof AuthenticatedProyectosNuevoRoute
   '/clientes': typeof AuthenticatedClientesIndexRoute
+  '/oficinas': typeof AuthenticatedOficinasIndexRoute
   '/proyectos': typeof AuthenticatedProyectosIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
 }
@@ -126,6 +135,7 @@ export interface FileRoutesById {
   '/_authenticated/proyectos/$proyectoId': typeof AuthenticatedProyectosProyectoIdRoute
   '/_authenticated/proyectos/nuevo': typeof AuthenticatedProyectosNuevoRoute
   '/_authenticated/clientes/': typeof AuthenticatedClientesIndexRoute
+  '/_authenticated/oficinas/': typeof AuthenticatedOficinasIndexRoute
   '/_authenticated/proyectos/': typeof AuthenticatedProyectosIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
 }
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | '/proyectos/$proyectoId'
     | '/proyectos/nuevo'
     | '/clientes'
+    | '/oficinas'
     | '/proyectos'
     | '/tasks'
   fileRoutesByTo: FileRoutesByTo
@@ -154,6 +165,7 @@ export interface FileRouteTypes {
     | '/proyectos/$proyectoId'
     | '/proyectos/nuevo'
     | '/clientes'
+    | '/oficinas'
     | '/proyectos'
     | '/tasks'
   id:
@@ -168,6 +180,7 @@ export interface FileRouteTypes {
     | '/_authenticated/proyectos/$proyectoId'
     | '/_authenticated/proyectos/nuevo'
     | '/_authenticated/clientes/'
+    | '/_authenticated/oficinas/'
     | '/_authenticated/proyectos/'
     | '/_authenticated/tasks/'
   fileRoutesById: FileRoutesById
@@ -230,6 +243,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProyectosIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/oficinas/': {
+      id: '/_authenticated/oficinas/'
+      path: '/oficinas'
+      fullPath: '/oficinas'
+      preLoaderRoute: typeof AuthenticatedOficinasIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/clientes/': {
       id: '/_authenticated/clientes/'
       path: '/clientes'
@@ -275,6 +295,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProyectosProyectoIdRoute: typeof AuthenticatedProyectosProyectoIdRoute
   AuthenticatedProyectosNuevoRoute: typeof AuthenticatedProyectosNuevoRoute
   AuthenticatedClientesIndexRoute: typeof AuthenticatedClientesIndexRoute
+  AuthenticatedOficinasIndexRoute: typeof AuthenticatedOficinasIndexRoute
   AuthenticatedProyectosIndexRoute: typeof AuthenticatedProyectosIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
 }
@@ -286,6 +307,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProyectosProyectoIdRoute: AuthenticatedProyectosProyectoIdRoute,
   AuthenticatedProyectosNuevoRoute: AuthenticatedProyectosNuevoRoute,
   AuthenticatedClientesIndexRoute: AuthenticatedClientesIndexRoute,
+  AuthenticatedOficinasIndexRoute: AuthenticatedOficinasIndexRoute,
   AuthenticatedProyectosIndexRoute: AuthenticatedProyectosIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
 }

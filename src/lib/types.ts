@@ -62,3 +62,15 @@ export interface StatusChangeData {
   nuevo_estado: ProjectStatus;
   nota?: string;
 }
+
+// Oficina Types
+export interface Oficina {
+  id: string;
+  nombre: string;
+  direccion?: string;
+  telefono?: string;
+  email?: string;
+  color?: string;
+  created_at: string;
+  updated_at: string;
+}
