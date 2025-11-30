@@ -224,7 +224,12 @@ export function ProyectoDetail() {
 
           {/* Content */}
           <div className='flex-1'>
-            <ProyectoDetailTabs proyecto={proyecto} cliente={cliente} activeTab={activeTab} />
+            <ProyectoDetailTabs 
+              proyecto={proyecto} 
+              cliente={cliente} 
+              activeTab={activeTab}
+              onProjectUpdate={(updatedProject) => setProyecto(updatedProject)}
+            />
           </div>
         </div>
       </Main>

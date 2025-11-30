@@ -6,6 +6,7 @@ import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { getAllProjects } from '@/lib/project-service'
 import { getAllClients } from '@/lib/client-service'
+import { getAllOficinas } from '@/lib/oficina-service'
 import { type Proyecto } from './data/schema'
 import { ProyectosTable } from './components/proyectos-table'
 import { ProyectosPrimaryButtons } from './components/proyectos-primary-buttons'
@@ -19,21 +20,27 @@ export function Proyectos() {
     try {
       setLoading(true)
       setError(null)
-      const [projectsData, clientsData] = await Promise.all([
+      const [projectsData, clientsData, oficinasData] = await Promise.all([
         getAllProjects(),
         getAllClients(),
+        getAllOficinas(),
       ])
 
-      // Map client names to projects
-      const projectsWithClients = projectsData.map((project) => {
+      // Map client names and oficina colors to projects
+      const projectsWithClientsAndOficinas = projectsData.map((project) => {
         const client = clientsData.find((c) => c._id === project.id_cliente)
+        // Match oficina by id or nombre (oficina field stores the nombre)
+        const oficina = oficinasData.find(
+          (o) => o.id === project.oficina || o.nombre === project.oficina
+        )
         return {
           ...project,
           cliente_nombre: client ? client.nombre_completo : undefined,
+          oficina_color: oficina?.color,
         } as Proyecto
       })
 
-      setProyectos(projectsWithClients)
+      setProyectos(projectsWithClientsAndOficinas)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cargar proyectos')
     } finally {

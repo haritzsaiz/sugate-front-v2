@@ -63,6 +63,8 @@ export const projectSchema = z.object({
   })).optional(),
   // Client info (populated from API or joined)
   cliente_nombre: z.string().optional(),
+  // Oficina color (populated from oficinas)
+  oficina_color: z.string().optional(),
 })
 
 export type Proyecto = z.infer<typeof projectSchema>

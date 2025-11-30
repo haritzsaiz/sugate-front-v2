@@ -11,6 +11,7 @@ import {
   projectStatusLabels,
   projectStatusColors,
 } from '../data/schema'
+import { OficinaBadge } from './oficina-badge'
 
 const statusIcons: Record<ProjectStatus, React.ReactNode> = {
   presupuesto: <FileText className='h-3 w-3' />,
@@ -82,7 +83,14 @@ export const proyectosColumns: ColumnDef<Proyecto>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Oficina' />
     ),
-    cell: ({ row }) => <div>{row.getValue('oficina') || '-'}</div>,
+    cell: ({ row }) => {
+      const oficinaNombre = row.getValue('oficina') as string | undefined
+      const oficinaColor = row.original.oficina_color
+      
+      if (!oficinaNombre) return <div>-</div>
+      
+      return <OficinaBadge nombre={oficinaNombre} color={oficinaColor} />
+    },
   },
   {
     accessorKey: 'estado',
