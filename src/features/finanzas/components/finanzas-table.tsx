@@ -149,7 +149,10 @@ export function FinanzasTable({
       </div>
 
       <div className='rounded-md border'>
-        <Table>
+        <Table className='table-fixed'>
+          <colgroup>
+            <col className='w-10' />
+          </colgroup>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -157,9 +160,7 @@ export function FinanzasTable({
                   <TableHead
                     key={header.id}
                     colSpan={header.colSpan}
-                    style={{ width: header.column.id === 'select' ? 40 : undefined }}
                     className={cn(
-                      header.column.id === 'select' && 'w-10',
                       header.column.id === 'totalBudget' ||
                         header.column.id === 'paymentsReceived' ||
                         header.column.id === 'facturado' ||
@@ -194,9 +195,7 @@ export function FinanzasTable({
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
-                      style={{ width: cell.column.id === 'select' ? 40 : undefined }}
                       className={cn(
-                        cell.column.id === 'select' && 'w-10',
                         cell.column.id === 'totalBudget' ||
                           cell.column.id === 'paymentsReceived' ||
                           cell.column.id === 'facturado' ||
