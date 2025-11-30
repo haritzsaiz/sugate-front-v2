@@ -11,10 +11,9 @@ import {
     type Proyecto,
     type ProjectStatus,
     projectStatusLabels,
-    projectStatusColors,
 } from '@/features/proyectos/data/schema'
+import { ProyectoStatusBadge } from '@/features/proyectos/components/proyecto-status-badge'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import {
     Tooltip,
     TooltipContent,
@@ -233,12 +232,7 @@ export function ProjectTimeline() {
                             <div className='space-y-1'>
                                 <p className='font-semibold'>{projectEvent.title}</p>
                                 <p className='text-xs text-muted-foreground'>{projectEvent.clientName}</p>
-                                <Badge
-                                    variant='outline'
-                                    className={projectStatusColors[status] || 'bg-gray-100 text-gray-800'}
-                                >
-                                    {projectStatusLabels[status] || status}
-                                </Badge>
+                                <ProyectoStatusBadge status={status} />
                             </div>
                         </TooltipContent>
                     </Tooltip>
@@ -359,15 +353,8 @@ export function ProjectTimeline() {
             {/* Legend */}
             <div className='mt-4 flex flex-wrap items-center gap-3 rounded-lg border bg-card p-3'>
                 <span className='text-sm font-medium text-muted-foreground'>Estados:</span>
-                {Object.entries(projectStatusLabels).map(([status, label]) => (
-                    <Badge
-                        key={status}
-                        variant='outline'
-                        className={`${projectStatusColors[status as ProjectStatus]} flex items-center gap-1`}
-                    >
-                        {statusIcons[status as ProjectStatus]}
-                        {label}
-                    </Badge>
+                {Object.keys(projectStatusLabels).map((status) => (
+                    <ProyectoStatusBadge key={status} status={status as ProjectStatus} />
                 ))}
             </div>
         </div>

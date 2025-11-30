@@ -126,12 +126,28 @@ export interface HitoFacturacion {
 }
 
 export interface Billing {
-  id: string;
-  id_proyecto: string;
-  direccion_facturacion?: string;
-  codigo_postal?: string;
-  presupuesto: BudgetData;
-  hitos_facturacion: HitoFacturacion[];
-  created_at: string;
-  updated_at: string;
+  id: string
+  id_proyecto: string
+  direccion_facturacion?: string
+  codigo_postal?: string
+  presupuesto: BudgetData
+  hitos_facturacion: HitoFacturacion[]
+  created_at: string
+  updated_at: string
+}
+
+// Financial Record Types for the Finanzas view
+export interface FinancialRecord {
+  projectId: string
+  projectName: string
+  clientId: string
+  clientName: string
+  office: string
+  projectStatus: ProjectStatus
+  createdAt: string
+  totalBudget: number
+  paymentsReceived: number
+  facturado: number
+  pendiente_factura: number
+  unassigned: number
 }

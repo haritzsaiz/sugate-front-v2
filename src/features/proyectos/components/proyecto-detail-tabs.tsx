@@ -6,7 +6,6 @@ import { updateProject } from '@/lib/project-service'
 import { getBillingByProjectId, createBilling, updateBilling } from '@/lib/billing-service'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { DatePicker } from '@/components/date-picker'
 import { OficinaSelector } from '@/components/oficina-selector'
 import { ClienteSelector } from '@/components/cliente-selector'
@@ -21,7 +20,8 @@ import { Clock, Pencil, Save, X, Loader2, Play, CheckCircle, XCircle, FileText, 
 import { BudgetEditor } from './budget'
 import { BillingTab } from './billing'
 import { OficinaBadge } from './oficina-badge'
-import { projectStatusLabels, projectStatusColors } from '../data/schema'
+import { ProyectoStatusBadge } from './proyecto-status-badge'
+import { projectStatusLabels } from '../data/schema'
 import { toast } from 'sonner'
 
 interface ProyectoDetailTabsProps {
@@ -311,13 +311,7 @@ export function ProyectoDetailTabs({ proyecto, cliente, activeTab, onProjectUpda
                 </SelectContent>
               </Select>
             ) : (
-              <Badge
-                variant='outline'
-                className={`flex w-fit items-center gap-1 ${projectStatusColors[resumenData.estado] ?? 'bg-gray-100 text-gray-800 border-gray-200'}`}
-              >
-                {statusIcons[resumenData.estado]}
-                {projectStatusLabels[resumenData.estado] ?? resumenData.estado}
-              </Badge>
+              <ProyectoStatusBadge status={resumenData.estado} />
             )}
           </div>
 

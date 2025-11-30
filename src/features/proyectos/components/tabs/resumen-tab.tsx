@@ -3,7 +3,6 @@ import { type ProjectStatus } from '@/lib/types'
 import { updateProject } from '@/lib/project-service'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { DatePicker } from '@/components/date-picker'
 import {
   Select,
@@ -13,7 +12,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Clock, Pencil, Save, X, Loader2, Play, CheckCircle, XCircle, FileText, FileX } from 'lucide-react'
-import { projectStatusLabels, projectStatusColors } from '@/features/proyectos/data/schema'
+import { projectStatusLabels } from '@/features/proyectos/data/schema'
+import { ProyectoStatusBadge } from '@/features/proyectos/components/proyecto-status-badge'
 import { useProyectoDetailContext } from '@/features/proyectos/hooks/use-proyecto-detail-context'
 import { toast } from 'sonner'
 
@@ -223,13 +223,7 @@ export function ResumenTab() {
             </SelectContent>
           </Select>
         ) : (
-          <Badge
-            variant='outline'
-            className={`flex w-fit items-center gap-1 ${projectStatusColors[resumenData.estado] ?? 'bg-gray-100 text-gray-800 border-gray-200'}`}
-          >
-            {statusIcons[resumenData.estado]}
-            {projectStatusLabels[resumenData.estado] ?? resumenData.estado}
-          </Badge>
+          <ProyectoStatusBadge status={resumenData.estado} />
         )}
       </div>
 

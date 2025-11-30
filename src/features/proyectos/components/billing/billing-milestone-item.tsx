@@ -173,7 +173,7 @@ export function BillingMilestoneItem({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value='pendiente'>Pendiente</SelectItem>
-                  <SelectItem value='facturado'>Facturado</SelectItem>
+                  <SelectItem value='facturado'>Factura emitida - Pdte. Cobro</SelectItem>
                   <SelectItem value='cobrado'>Cobrado</SelectItem>
                 </SelectContent>
               </Select>
