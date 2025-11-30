@@ -22,8 +22,11 @@ function computeFinancialRecord(
   billing: Billing | null,
   client: Client | undefined
 ): FinancialRecord {
-  // Total budget from billing or 0
-  const totalBudget = billing?.presupuesto?.total_con_iva ?? 0
+  // Total budget: prefer billing.presupuesto, then fallback to project's approved budget
+  const approvedBudget = project.budget_id_aprobado
+    ? project.presupuestos?.find((b) => b.id === project.budget_id_aprobado)
+    : undefined
+  const totalBudget = billing?.presupuesto?.total_con_iva ?? approvedBudget?.total_con_iva ?? 0
 
   // Calculate amounts from billing milestones
   let paymentsReceived = 0 // cobrado
