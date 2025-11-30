@@ -58,7 +58,7 @@ export function BudgetPreview({
   discountRate,
 }: BudgetPreviewProps) {
   const getSectionTotal = (section: BudgetSection) => {
-    return section.concepts.reduce((sum, c) => sum + c.cost, 0)
+    return section.items.reduce((sum, item) => sum + item.precio, 0)
   }
 
   const handlePrint = () => {
@@ -72,29 +72,23 @@ export function BudgetPreview({
     const sectionsHtml = sections.map((section, sectionIndex) => `
       <div style="margin-bottom: 24px;">
         <div style="margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; border-radius: 6px; background: #f3f4f6; padding: 12px 16px;">
-          <span style="font-weight: 600;">${sectionIndex + 1}. ${section.name || 'Sin nombre'}</span>
+          <span style="font-weight: 600;">${sectionIndex + 1}. ${section.titulo || 'Sin nombre'}</span>
           <span style="font-family: monospace; font-weight: 600;">${formatCurrency(getSectionTotal(section))}</span>
         </div>
         <table style="width: 100%; border-collapse: collapse;">
           <thead>
             <tr style="border-bottom: 1px solid #e5e5e5;">
               <th style="padding: 8px 12px; text-align: left; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Nº</th>
-              <th style="padding: 8px 12px; text-align: left; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Concepto</th>
-              <th style="padding: 8px 12px; text-align: left; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Ref.</th>
-              <th style="padding: 8px 12px; text-align: right; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Cant.</th>
+              <th style="padding: 8px 12px; text-align: left; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Título</th>
               <th style="padding: 8px 12px; text-align: right; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Precio</th>
-              <th style="padding: 8px 12px; text-align: right; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Importe</th>
             </tr>
           </thead>
           <tbody>
-            ${section.concepts.map((concept, conceptIndex) => `
+            ${section.items.map((item, itemIndex) => `
               <tr style="border-bottom: 1px solid #f3f4f6;">
-                <td style="padding: 12px; font-family: monospace; font-size: 14px; color: #6b7280;">${sectionIndex + 1}.${conceptIndex + 1}</td>
-                <td style="padding: 12px; font-size: 14px;">${concept.description}</td>
-                <td style="padding: 12px; font-family: monospace; font-size: 12px; color: #6b7280;">${concept.referencia || '-'}</td>
-                <td style="padding: 12px; text-align: right; font-family: monospace; font-size: 14px;">${concept.quantity}</td>
-                <td style="padding: 12px; text-align: right; font-family: monospace; font-size: 14px;">${formatCurrency(concept.unitPrice)}</td>
-                <td style="padding: 12px; text-align: right; font-family: monospace; font-size: 14px; font-weight: 500;">${formatCurrency(concept.cost)}</td>
+                <td style="padding: 12px; font-family: monospace; font-size: 14px; color: #6b7280;">${sectionIndex + 1}.${itemIndex + 1}</td>
+                <td style="padding: 12px; font-size: 14px;">${item.titulo}</td>
+                <td style="padding: 12px; text-align: right; font-family: monospace; font-size: 14px; font-weight: 500;">${formatCurrency(item.precio)}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -292,7 +286,7 @@ export function BudgetPreview({
               <div key={section.id} className='mb-6'>
                 <div className='mb-2 flex items-center justify-between rounded-md bg-gray-100 px-4 py-3'>
                   <span className='font-semibold'>
-                    {sectionIndex + 1}. {section.name || 'Sin nombre'}
+                    {sectionIndex + 1}. {section.titulo || 'Sin nombre'}
                   </span>
                   <span className='font-mono font-semibold'>
                     {formatCurrency(getSectionTotal(section))}
@@ -302,31 +296,19 @@ export function BudgetPreview({
                   <thead>
                     <tr className='border-b text-xs uppercase text-muted-foreground'>
                       <th className='py-2 text-left font-medium'>Nº</th>
-                      <th className='py-2 text-left font-medium'>Concepto</th>
-                      <th className='py-2 text-left font-medium'>Ref.</th>
-                      <th className='py-2 text-right font-medium'>Cant.</th>
+                      <th className='py-2 text-left font-medium'>Título</th>
                       <th className='py-2 text-right font-medium'>Precio</th>
-                      <th className='py-2 text-right font-medium'>Importe</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {section.concepts.map((concept, conceptIndex) => (
-                      <tr key={concept.id} className='border-b border-gray-100'>
+                    {section.items.map((item, itemIndex) => (
+                      <tr key={item.id} className='border-b border-gray-100'>
                         <td className='py-3 font-mono text-sm text-muted-foreground'>
-                          {sectionIndex + 1}.{conceptIndex + 1}
+                          {sectionIndex + 1}.{itemIndex + 1}
                         </td>
-                        <td className='py-3 text-sm'>{concept.description}</td>
-                        <td className='py-3 font-mono text-xs text-muted-foreground'>
-                          {concept.referencia || '-'}
-                        </td>
-                        <td className='py-3 text-right font-mono text-sm'>
-                          {concept.quantity}
-                        </td>
-                        <td className='py-3 text-right font-mono text-sm'>
-                          {formatCurrency(concept.unitPrice)}
-                        </td>
+                        <td className='py-3 text-sm'>{item.titulo}</td>
                         <td className='py-3 text-right font-mono text-sm font-medium'>
-                          {formatCurrency(concept.cost)}
+                          {formatCurrency(item.precio)}
                         </td>
                       </tr>
                     ))}

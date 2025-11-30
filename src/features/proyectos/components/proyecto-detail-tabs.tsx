@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
-import { type Project, type BudgetSection, type Oficina, type ProjectStatus } from '@/lib/types'
+import { useState, useEffect, useCallback } from 'react'
+import { type Project, type BudgetData, type Oficina, type ProjectStatus, type Billing } from '@/lib/types'
 import { type Client } from '@/lib/client-service'
 import { getAllOficinas } from '@/lib/oficina-service'
 import { updateProject } from '@/lib/project-service'
+import { getBillingByProjectId, createBilling, updateBilling } from '@/lib/billing-service'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -16,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Clock, Pencil, Save, X, Loader2, Play, CheckCircle, XCircle, FileText } from 'lucide-react'
+import { Clock, Pencil, Save, X, Loader2, Play, CheckCircle, XCircle, FileText, FileX } from 'lucide-react'
 import { BudgetEditor } from './budget'
 import { OficinaBadge } from './oficina-badge'
 import { projectStatusLabels, projectStatusColors } from '../data/schema'
@@ -33,6 +34,7 @@ export function ProyectoDetailTabs({ proyecto, cliente, activeTab, onProjectUpda
   // Status icons mapping
   const statusIcons: Record<ProjectStatus, React.ReactNode> = {
     presupuesto: <FileText className='h-3 w-3' />,
+    presupuesto_abandonado: <FileX className='h-3 w-3' />,
     planificacion: <Clock className='h-3 w-3' />,
     en_ejecucion: <Play className='h-3 w-3' />,
     finalizado: <CheckCircle className='h-3 w-3' />,
@@ -550,12 +552,21 @@ export function ProyectoDetailTabs({ proyecto, cliente, activeTab, onProjectUpda
             <div>
               <p className='text-sm text-primary mb-2'>Dirección Completa</p>
               <Input 
-                value={`${proyecto.direccion}, ${proyecto.ciudad}${proyecto.oficina ? `, ${proyecto.oficina}` : ''}`} 
+                value={`${proyecto.direccion}, ${proyecto.ciudad}`} 
                 readOnly 
               />
             </div>
-            <div className='h-64 rounded border bg-muted/50 flex items-center justify-center'>
-              <p className='text-muted-foreground'>Mapa no disponible</p>
+            <div className='h-96 rounded border overflow-hidden'>
+              <iframe
+                title='Ubicación del proyecto'
+                width='100%'
+                height='100%'
+                style={{ border: 0 }}
+                loading='lazy'
+                allowFullScreen
+                referrerPolicy='no-referrer-when-downgrade'
+                src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(`${proyecto.direccion}, ${proyecto.ciudad}`)}`}
+              />
             </div>
           </div>
         </>
@@ -566,10 +577,36 @@ export function ProyectoDetailTabs({ proyecto, cliente, activeTab, onProjectUpda
         <BudgetEditor
           project={proyecto}
           client={cliente}
-          onSaveBudgetDetails={(budgetDetails: BudgetSection[]) => {
-            // TODO: Implement save to backend
-            console.log('Saving budget details:', budgetDetails)
-            toast.success('Presupuesto guardado correctamente')
+          onSaveBudgetDetails={async (budgetData: BudgetData) => {
+            try {
+              // Check if billing already exists for this project
+              const existingBilling = await getBillingByProjectId(proyecto.id)
+              
+              if (existingBilling) {
+                // Update existing billing
+                const updatedBilling: Billing = {
+                  ...existingBilling,
+                  presupuesto: budgetData,
+                  updated_at: new Date().toISOString(),
+                }
+                await updateBilling(updatedBilling)
+                console.log('Updated billing:', updatedBilling)
+              } else {
+                // Create new billing
+                const newBilling = {
+                  id_proyecto: proyecto.id,
+                  presupuesto: budgetData,
+                  hitos_facturacion: [],
+                }
+                const created = await createBilling(newBilling)
+                console.log('Created billing:', created)
+              }
+              
+              toast.success('Presupuesto guardado correctamente')
+            } catch (error) {
+              console.error('Error saving budget:', error)
+              toast.error('Error al guardar el presupuesto')
+            }
           }}
         />
       )}

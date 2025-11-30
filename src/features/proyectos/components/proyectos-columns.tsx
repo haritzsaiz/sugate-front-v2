@@ -1,5 +1,5 @@
 import { type ColumnDef } from '@tanstack/react-table'
-import { ExternalLink, Play, Clock, CheckCircle, XCircle, FileText } from 'lucide-react'
+import { ExternalLink, Play, Clock, CheckCircle, XCircle, FileText, FileX } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
@@ -15,6 +15,7 @@ import { OficinaBadge } from './oficina-badge'
 
 const statusIcons: Record<ProjectStatus, React.ReactNode> = {
   presupuesto: <FileText className='h-3 w-3' />,
+  presupuesto_abandonado: <FileX className='h-3 w-3' />,
   planificacion: <Clock className='h-3 w-3' />,
   en_ejecucion: <Play className='h-3 w-3' />,
   finalizado: <CheckCircle className='h-3 w-3' />,

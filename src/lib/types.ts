@@ -2,6 +2,7 @@
 
 export type ProjectStatus = 
   | 'presupuesto'
+  | 'presupuesto_abandonado'
   | 'planificacion'
   | 'en_ejecucion'
   | 'finalizado'
@@ -13,7 +14,7 @@ export interface ProjectStatusChange {
   nota?: string;
 }
 
-export interface Budget {
+export interface ProjectBudget {
   id: string;
   project_id: string;
   nombre: string;
@@ -21,6 +22,8 @@ export interface Budget {
   estado: 'borrador' | 'enviado' | 'aprobado' | 'rechazado';
   created_at: string;
   updated_at: string;
+  // Budget data following Go model
+  budget_data?: BudgetData;
 }
 
 export interface Project {
@@ -45,7 +48,7 @@ export interface Project {
   fechas_cambio_estado: ProjectStatusChange[];
   created_at: string;
   updated_at: string;
-  presupuestos?: Budget[];
+  presupuestos?: BudgetData[];
 }
 
 export interface CreateProjectData {
@@ -75,18 +78,51 @@ export interface Oficina {
   updated_at: string;
 }
 
-// Budget Types
-export interface BudgetConcept {
+// Budget Types - Mapped from Go backend models
+
+export interface BudgetItem {
+  // Mapped from Go's BudgetItem
+  titulo: string;
+  precio: number;
+  // UI-only properties
   id: string;
-  referencia: string;
-  description: string;
-  quantity: number;
-  unitPrice: number;
-  cost: number;
 }
 
 export interface BudgetSection {
+  // Mapped from Go's BudgetSection
+  titulo: string;
+  items: BudgetItem[];
+  subtotal: number;
+  // UI-only properties
   id: string;
-  name: string;
-  concepts: BudgetConcept[];
+}
+
+export interface BudgetData {
+  // Mapped from Go's Budget
+  id: string;
+  created_at: string;
+  total_sin_iva: number;
+  iva_aplicado: number; // VAT percentage
+  iva_importe: number; // VAT amount
+  total_con_iva: number;
+  secciones: BudgetSection[];
+}
+
+// Billing Types - Mapped from Go backend models
+
+export interface HitoFacturacion {
+  nombre: string;
+  porcentaje: number;
+  importe: number;
+  facturado: boolean;
+  fecha_facturacion?: string;
+}
+
+export interface Billing {
+  id: string;
+  id_proyecto: string;
+  presupuesto: BudgetData;
+  hitos_facturacion: HitoFacturacion[];
+  created_at: string;
+  updated_at: string;
 }

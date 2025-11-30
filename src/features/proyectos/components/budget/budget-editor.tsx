@@ -1,12 +1,19 @@
-import { useState, useMemo } from 'react'
-import { type Project } from '@/lib/types'
+import { useState, useMemo, useEffect } from 'react'
+import { type Project, type BudgetSection, type BudgetItem, type BudgetData } from '@/lib/types'
 import { type Client } from '@/lib/client-service'
-import { type BudgetSection, type BudgetConcept } from '@/lib/types'
+import { getBillingByProjectId } from '@/lib/billing-service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   Table,
   TableBody,
@@ -30,6 +37,9 @@ import {
   Copy,
   Percent,
   Eye,
+  Loader2,
+  CheckCircle,
+  FilePlus,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -49,7 +59,7 @@ import { BudgetPreview } from './budget-preview'
 interface BudgetEditorProps {
   project: Project
   client: Client | null
-  onSaveBudgetDetails: (updatedBudgetDetails: BudgetSection[]) => void
+  onSaveBudgetDetails: (budgetData: BudgetData) => void
 }
 
 const generateId = () => `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
@@ -66,22 +76,125 @@ const formatCurrency = (value: number) => {
 export function BudgetEditor({ project, client, onSaveBudgetDetails }: BudgetEditorProps) {
   const [sections, setSections] = useState<BudgetSection[]>([])
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
-  const [taxRate, setTaxRate] = useState(21)
+  const [taxRate, setTaxRate] = useState(21) // iva_aplicado
   const [discountRate, setDiscountRate] = useState(0)
   const [previewOpen, setPreviewOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [selectedBudgetId, setSelectedBudgetId] = useState<string | null>(null)
+  const [isNewBudget, setIsNewBudget] = useState(false)
 
-  // Calculate totals
+  // Get the list of presupuestos from the project
+  const presupuestos = project.presupuestos || []
+  const approvedBudgetId = project.budget_id_aprobado
+
+  // Load budget data when selection changes
+  useEffect(() => {
+    const loadBudgetData = async () => {
+      setIsLoading(true)
+      
+      try {
+        if (isNewBudget) {
+          // Creating a new budget - start fresh
+          setSections([])
+          setTaxRate(21)
+          setExpandedSections(new Set())
+        } else if (selectedBudgetId) {
+          // Load the selected budget from presupuestos
+          const selectedBudget = presupuestos.find(p => p.id === selectedBudgetId)
+          if (selectedBudget) {
+            // Add IDs to sections and items if they don't have them
+            const sectionsWithIds = (selectedBudget.secciones || []).map((section, sIdx) => ({
+              ...section,
+              id: section.id || `section-${sIdx}-${Date.now()}`,
+              items: (section.items || []).map((item, iIdx) => ({
+                ...item,
+                id: item.id || `item-${sIdx}-${iIdx}-${Date.now()}`,
+              })),
+            }))
+            setSections(sectionsWithIds)
+            setTaxRate(selectedBudget.iva_aplicado || 21)
+            // Expand all sections by default
+            setExpandedSections(new Set(sectionsWithIds.map(s => s.id)))
+          }
+        } else if (presupuestos.length > 0) {
+          // Auto-select the approved budget or the first one
+          const budgetToSelect = approvedBudgetId 
+            ? presupuestos.find(p => p.id === approvedBudgetId) || presupuestos[0]
+            : presupuestos[0]
+          setSelectedBudgetId(budgetToSelect.id)
+        } else {
+          // No presupuestos exist, try loading from billing service
+          const billing = await getBillingByProjectId(project.id)
+          if (billing?.presupuesto) {
+            const sectionsWithIds = (billing.presupuesto.secciones || []).map((section, sIdx) => ({
+              ...section,
+              id: section.id || `section-${sIdx}-${Date.now()}`,
+              items: (section.items || []).map((item, iIdx) => ({
+                ...item,
+                id: item.id || `item-${sIdx}-${iIdx}-${Date.now()}`,
+              })),
+            }))
+            setSections(sectionsWithIds)
+            setTaxRate(billing.presupuesto.iva_aplicado || 21)
+            setExpandedSections(new Set(sectionsWithIds.map(s => s.id)))
+          }
+        }
+      } catch (error) {
+        console.error('Error loading budget data:', error)
+        toast.error('Error al cargar los datos del presupuesto')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadBudgetData()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project.id, selectedBudgetId, isNewBudget, approvedBudgetId])
+
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    return new Intl.DateTimeFormat('es-ES', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    }).format(new Date(dateString))
+  }
+
+  // Handle budget selection change
+  const handleBudgetChange = (value: string) => {
+    if (value === 'new') {
+      setIsNewBudget(true)
+      setSelectedBudgetId(null)
+    } else {
+      setIsNewBudget(false)
+      setSelectedBudgetId(value)
+    }
+  }
+
+  // Calculate totals - mapped to Go model fields
   const calculations = useMemo(() => {
-    const subtotal = sections.reduce((total, section) => {
-      return total + section.concepts.reduce((sectionSum, concept) => sectionSum + concept.cost, 0)
+    const total_sin_iva = sections.reduce((total, section) => {
+      return total + section.items.reduce((sectionSum, item) => sectionSum + item.precio, 0)
     }, 0)
-    const discount = subtotal * (discountRate / 100)
-    const taxableAmount = subtotal - discount
-    const tax = taxableAmount * (taxRate / 100)
-    const total = taxableAmount + tax
-    const totalConcepts = sections.reduce((sum, s) => sum + s.concepts.length, 0)
+    const discount = total_sin_iva * (discountRate / 100)
+    const taxableAmount = total_sin_iva - discount
+    const iva_importe = taxableAmount * (taxRate / 100)
+    const total_con_iva = taxableAmount + iva_importe
+    const totalItems = sections.reduce((sum, s) => sum + s.items.length, 0)
 
-    return { subtotal, discount, taxableAmount, tax, total, totalConcepts }
+    return { 
+      total_sin_iva, 
+      discount, 
+      taxableAmount, 
+      iva_importe, 
+      total_con_iva, 
+      totalItems,
+      // Aliases for backward compatibility
+      subtotal: total_sin_iva,
+      tax: iva_importe,
+      total: total_con_iva,
+      totalConcepts: totalItems,
+    }
   }, [sections, taxRate, discountRate])
 
   const toggleSection = (sectionId: string) => {
@@ -99,8 +212,9 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails }: BudgetEdi
   const addSection = () => {
     const newSection: BudgetSection = {
       id: generateId(),
-      name: '',
-      concepts: [],
+      titulo: '',
+      items: [],
+      subtotal: 0,
     }
     setSections((prev) => [...prev, newSection])
     setExpandedSections((prev) => new Set([...prev, newSection.id]))
@@ -108,9 +222,13 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails }: BudgetEdi
 
   const updateSection = (sectionId: string, updates: Partial<BudgetSection>) => {
     setSections((prev) =>
-      prev.map((section) =>
-        section.id === sectionId ? { ...section, ...updates } : section
-      )
+      prev.map((section) => {
+        if (section.id !== sectionId) return section
+        const updated = { ...section, ...updates }
+        // Recalculate subtotal when items change
+        updated.subtotal = updated.items.reduce((sum, item) => sum + item.precio, 0)
+        return updated
+      })
     )
   }
 
@@ -125,8 +243,8 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails }: BudgetEdi
       const newSection: BudgetSection = {
         ...section,
         id: generateId(),
-        name: `${section.name} (copia)`,
-        concepts: section.concepts.map((c) => ({ ...c, id: generateId() })),
+        titulo: `${section.titulo} (copia)`,
+        items: section.items.map((item) => ({ ...item, id: generateId() })),
       }
       setSections((prev) => [...prev, newSection])
       setExpandedSections((prev) => new Set([...prev, newSection.id]))
@@ -134,54 +252,50 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails }: BudgetEdi
     }
   }
 
-  const addConcept = (sectionId: string) => {
-    const newConcept: BudgetConcept = {
+  const addItem = (sectionId: string) => {
+    const newItem: BudgetItem = {
       id: generateId(),
-      referencia: '',
-      description: '',
-      quantity: 1,
-      unitPrice: 0,
-      cost: 0,
+      titulo: '',
+      precio: 0,
     }
-    updateSection(sectionId, {
-      concepts: [
-        ...sections.find((s) => s.id === sectionId)!.concepts,
-        newConcept,
-      ],
-    })
+    const section = sections.find((s) => s.id === sectionId)
+    if (section) {
+      updateSection(sectionId, {
+        items: [...section.items, newItem],
+      })
+    }
   }
 
-  const updateConcept = (
+  const updateItem = (
     sectionId: string,
-    conceptId: string,
-    updates: Partial<BudgetConcept>
+    itemId: string,
+    updates: Partial<BudgetItem>
   ) => {
     setSections((prev) =>
       prev.map((section) => {
         if (section.id !== sectionId) return section
+        const updatedItems = section.items.map((item) => {
+          if (item.id !== itemId) return item
+          return { ...item, ...updates }
+        })
         return {
           ...section,
-          concepts: section.concepts.map((concept) => {
-            if (concept.id !== conceptId) return concept
-            const updated = { ...concept, ...updates }
-            // Auto-calculate cost when quantity or unitPrice changes
-            if ('quantity' in updates || 'unitPrice' in updates) {
-              updated.cost = updated.quantity * updated.unitPrice
-            }
-            return updated
-          }),
+          items: updatedItems,
+          subtotal: updatedItems.reduce((sum, item) => sum + item.precio, 0),
         }
       })
     )
   }
 
-  const deleteConcept = (sectionId: string, conceptId: string) => {
+  const deleteItem = (sectionId: string, itemId: string) => {
     setSections((prev) =>
       prev.map((section) => {
         if (section.id !== sectionId) return section
+        const updatedItems = section.items.filter((item) => item.id !== itemId)
         return {
           ...section,
-          concepts: section.concepts.filter((c) => c.id !== conceptId),
+          items: updatedItems,
+          subtotal: updatedItems.reduce((sum, item) => sum + item.precio, 0),
         }
       })
     )
@@ -189,30 +303,113 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails }: BudgetEdi
 
   const handleSave = () => {
     // Validation
-    const emptySections = sections.filter((s) => !s.name.trim())
+    const emptySections = sections.filter((s) => !s.titulo.trim())
     if (emptySections.length > 0) {
       toast.error('Todas las secciones deben tener un nombre')
       return
     }
 
-    const invalidConcepts = sections.some((s) =>
-      s.concepts.some((c) => !c.description.trim() || c.cost < 0)
+    const invalidItems = sections.some((s) =>
+      s.items.some((item) => !item.titulo.trim() || item.precio < 0)
     )
-    if (invalidConcepts) {
-      toast.error('Todos los conceptos deben tener una descripción y un coste válido')
+    if (invalidItems) {
+      toast.error('Todos los items deben tener un título y un precio válido')
       return
     }
 
-    onSaveBudgetDetails(sections)
-    toast.success('Presupuesto guardado correctamente')
+    // Build BudgetData object matching Go model
+    const budgetData: BudgetData = {
+      id: generateId(),
+      created_at: new Date().toISOString(),
+      total_sin_iva: calculations.total_sin_iva,
+      iva_aplicado: taxRate,
+      iva_importe: calculations.iva_importe,
+      total_con_iva: calculations.total_con_iva,
+      secciones: sections.map((section) => ({
+        id: section.id,
+        titulo: section.titulo,
+        items: section.items.map((item) => ({
+          id: item.id,
+          titulo: item.titulo,
+          precio: item.precio,
+        })),
+        subtotal: section.subtotal,
+      })),
+    }
+
+    onSaveBudgetDetails(budgetData)
   }
 
   const getSectionTotal = (section: BudgetSection) => {
-    return section.concepts.reduce((sum, c) => sum + c.cost, 0)
+    return section.items.reduce((sum, item) => sum + item.precio, 0)
+  }
+
+  // Show loading state while fetching data
+  if (isLoading) {
+    return (
+      <div className='flex h-64 items-center justify-center'>
+        <Loader2 className='h-8 w-8 animate-spin text-primary' />
+        <span className='ml-2 text-muted-foreground'>Cargando presupuesto...</span>
+      </div>
+    )
   }
 
   return (
     <div className='space-y-6'>
+      {/* Budget Selector */}
+      {presupuestos.length > 0 && (
+        <Card>
+          <CardContent className='p-4'>
+            <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
+              <div className='flex items-center gap-3'>
+                <Receipt className='h-5 w-5 text-muted-foreground' />
+                <div>
+                  <p className='text-sm font-medium'>Seleccionar Presupuesto</p>
+                  <p className='text-xs text-muted-foreground'>
+                    {presupuestos.length} presupuesto{presupuestos.length !== 1 ? 's' : ''} disponible{presupuestos.length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              </div>
+              <div className='flex items-center gap-2'>
+                <Select
+                  value={isNewBudget ? 'new' : (selectedBudgetId || '')}
+                  onValueChange={handleBudgetChange}
+                >
+                  <SelectTrigger className='w-[300px]'>
+                    <SelectValue placeholder='Selecciona un presupuesto' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {presupuestos.map((budget) => (
+                      <SelectItem key={budget.id} value={budget.id}>
+                        <div className='flex items-center gap-2'>
+                          {budget.id === approvedBudgetId && (
+                            <CheckCircle className='h-4 w-4 text-green-600' />
+                          )}
+                          <span>
+                            {formatCurrency(budget.total_con_iva)} - {formatDate(budget.created_at)}
+                          </span>
+                          {budget.id === approvedBudgetId && (
+                            <Badge variant='default' className='ml-2 bg-green-600 text-xs'>
+                              Aprobado
+                            </Badge>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                    <SelectItem value='new'>
+                      <div className='flex items-center gap-2 text-primary'>
+                        <FilePlus className='h-4 w-4' />
+                        <span>Crear nuevo presupuesto</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Header Card */}
       <Card className='overflow-hidden border-none shadow-md'>
         <div className='bg-gradient-to-r from-primary to-primary/80 p-6 text-primary-foreground'>
@@ -222,7 +419,17 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails }: BudgetEdi
                 <Receipt className='h-6 w-6' />
               </div>
               <div>
-                <h2 className='text-xl font-semibold'>Presupuesto</h2>
+                <div className='flex items-center gap-2'>
+                  <h2 className='text-xl font-semibold'>
+                    {isNewBudget ? 'Nuevo Presupuesto' : 'Presupuesto'}
+                  </h2>
+                  {selectedBudgetId === approvedBudgetId && !isNewBudget && (
+                    <Badge variant='secondary' className='bg-green-500 text-white'>
+                      <CheckCircle className='mr-1 h-3 w-3' />
+                      Aprobado
+                    </Badge>
+                  )}
+                </div>
                 <p className='text-sm opacity-90'>{project.direccion}</p>
                 {client && (
                   <p className='text-sm opacity-75'>
@@ -325,15 +532,15 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails }: BudgetEdi
                   </Badge>
 
                   <Input
-                    value={section.name}
-                    onChange={(e) => updateSection(section.id, { name: e.target.value })}
+                    value={section.titulo}
+                    onChange={(e) => updateSection(section.id, { titulo: e.target.value })}
                     placeholder='Nombre de la sección...'
                     className='h-8 flex-1 border-none bg-transparent font-medium shadow-none focus-visible:ring-0'
                   />
 
                   <div className='flex items-center gap-2'>
                     <Badge variant='secondary' className='font-mono'>
-                      {section.concepts.length} items
+                      {section.items.length} items
                     </Badge>
                     <Badge className='font-mono'>
                       {formatCurrency(sectionTotal)}
@@ -369,92 +576,60 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails }: BudgetEdi
                       <TableHeader>
                         <TableRow className='hover:bg-transparent'>
                           <TableHead className='w-12'></TableHead>
-                          <TableHead className='min-w-[200px]'>Concepto</TableHead>
-                          <TableHead className='w-28'>Referencia</TableHead>
-                          <TableHead className='w-24 text-right'>Cantidad</TableHead>
-                          <TableHead className='w-32 text-right'>Precio/Ud</TableHead>
-                          <TableHead className='w-32 text-right'>Importe</TableHead>
+                          <TableHead className='min-w-[200px]'>Título</TableHead>
+                          <TableHead className='w-32 text-right'>Precio</TableHead>
                           <TableHead className='w-12'></TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {section.concepts.length === 0 ? (
+                        {section.items.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={7} className='h-24 text-center'>
+                            <TableCell colSpan={4} className='h-24 text-center'>
                               <p className='text-sm text-muted-foreground'>
-                                Sin conceptos. Añade el primero.
+                                Sin items. Añade el primero.
                               </p>
                             </TableCell>
                           </TableRow>
                         ) : (
-                          section.concepts.map((concept, conceptIndex) => (
-                            <TableRow key={concept.id} className='group'>
+                          section.items.map((item, itemIndex) => (
+                            <TableRow key={item.id} className='group'>
                               <TableCell className='text-center text-muted-foreground'>
                                 <span className='font-mono text-xs'>
-                                  {sectionIndex + 1}.{conceptIndex + 1}
+                                  {sectionIndex + 1}.{itemIndex + 1}
                                 </span>
                               </TableCell>
                               <TableCell>
                                 <Input
-                                  value={concept.description}
+                                  value={item.titulo}
                                   onChange={(e) =>
-                                    updateConcept(section.id, concept.id, {
-                                      description: e.target.value,
+                                    updateItem(section.id, item.id, {
+                                      titulo: e.target.value,
                                     })
                                   }
-                                  placeholder='Concepto...'
+                                  placeholder='Título del item...'
                                   className='h-8 border-none bg-transparent shadow-none focus-visible:bg-background focus-visible:ring-1'
                                 />
                               </TableCell>
                               <TableCell>
                                 <Input
-                                  value={concept.referencia}
-                                  onChange={(e) =>
-                                    updateConcept(section.id, concept.id, {
-                                      referencia: e.target.value,
-                                    })
-                                  }
-                                  placeholder='REF-001'
-                                  className='h-8 border-none bg-transparent font-mono text-xs shadow-none focus-visible:bg-background focus-visible:ring-1'
-                                />
-                              </TableCell>
-                              <TableCell>
-                                <Input
                                   type='number'
-                                  value={concept.quantity}
+                                  value={item.precio}
                                   onChange={(e) =>
-                                    updateConcept(section.id, concept.id, {
-                                      quantity: parseFloat(e.target.value) || 0,
+                                    updateItem(section.id, item.id, {
+                                      precio: parseFloat(e.target.value) || 0,
                                     })
                                   }
                                   className='h-8 border-none bg-transparent text-right shadow-none focus-visible:bg-background focus-visible:ring-1'
                                   min={0}
                                   step={0.01}
                                 />
-                              </TableCell>
-                              <TableCell>
-                                <Input
-                                  type='number'
-                                  value={concept.unitPrice}
-                                  onChange={(e) =>
-                                    updateConcept(section.id, concept.id, {
-                                      unitPrice: parseFloat(e.target.value) || 0,
-                                    })
-                                  }
-                                  className='h-8 border-none bg-transparent text-right shadow-none focus-visible:bg-background focus-visible:ring-1'
-                                  min={0}
-                                  step={0.01}
-                                />
-                              </TableCell>
-                              <TableCell className='text-right font-mono font-medium'>
-                                {formatCurrency(concept.cost)}
                               </TableCell>
                               <TableCell>
                                 <Button
                                   variant='ghost'
                                   size='icon'
                                   className='h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100'
-                                  onClick={() => deleteConcept(section.id, concept.id)}
+                                  onClick={() => deleteItem(section.id, item.id)}
                                 >
                                   <Trash2 className='h-4 w-4 text-destructive' />
                                 </Button>
@@ -465,15 +640,15 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails }: BudgetEdi
                       </TableBody>
                       <TableFooter>
                         <TableRow>
-                          <TableCell colSpan={7} className='p-2'>
+                          <TableCell colSpan={4} className='p-2'>
                             <Button
                               variant='ghost'
                               size='sm'
                               className='w-full gap-2 border border-dashed'
-                              onClick={() => addConcept(section.id)}
+                              onClick={() => addItem(section.id)}
                             >
                               <Plus className='h-4 w-4' />
-                              Añadir concepto
+                              Añadir item
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -516,7 +691,7 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails }: BudgetEdi
                 {sections.map((section, index) => (
                   <div key={section.id} className='flex items-center justify-between text-sm'>
                     <span className='text-muted-foreground'>
-                      {index + 1}. {section.name || 'Sin nombre'}
+                      {index + 1}. {section.titulo || 'Sin nombre'}
                     </span>
                     <span className='font-mono'>{formatCurrency(getSectionTotal(section))}</span>
                   </div>
