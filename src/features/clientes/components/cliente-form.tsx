@@ -120,9 +120,9 @@ export function ClienteForm() {
         </div>
 
         <Form {...form}>
-          <form id='cliente-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
+          <form id='cliente-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
             {/* Información Personal */}
-            <div className='rounded-lg border p-6'>
+            <div>
               <div className='mb-4 flex items-center gap-2'>
                 <User className='h-5 w-5 text-primary' />
                 <h3 className='text-lg font-medium'>Información Personal</h3>
@@ -188,7 +188,7 @@ export function ClienteForm() {
             </div>
 
             {/* Información de Contacto */}
-            <div className='rounded-lg border p-6'>
+            <div>
               <div className='mb-4 flex items-center gap-2'>
                 <Mail className='h-5 w-5 text-primary' />
                 <h3 className='text-lg font-medium'>Información de Contacto</h3>
