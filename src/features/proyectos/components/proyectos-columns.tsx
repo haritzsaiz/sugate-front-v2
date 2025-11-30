@@ -1,26 +1,12 @@
 import { type ColumnDef } from '@tanstack/react-table'
-import { ExternalLink, Play, Clock, CheckCircle, XCircle, FileText, FileX } from 'lucide-react'
+import { ExternalLink } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DataTableColumnHeader } from '@/components/data-table'
-import {
-  type Proyecto,
-  type ProjectStatus,
-  projectStatusLabels,
-  projectStatusColors,
-} from '../data/schema'
+import { type Proyecto, type ProjectStatus } from '../data/schema'
 import { OficinaBadge } from './oficina-badge'
-
-const statusIcons: Record<ProjectStatus, React.ReactNode> = {
-  presupuesto: <FileText className='h-3 w-3' />,
-  presupuesto_abandonado: <FileX className='h-3 w-3' />,
-  planificacion: <Clock className='h-3 w-3' />,
-  en_ejecucion: <Play className='h-3 w-3' />,
-  finalizado: <CheckCircle className='h-3 w-3' />,
-  cancelado: <XCircle className='h-3 w-3' />,
-}
+import { ProyectoStatusBadge } from './proyecto-status-badge'
 
 export const proyectosColumns: ColumnDef<Proyecto>[] = [
   {
@@ -100,18 +86,7 @@ export const proyectosColumns: ColumnDef<Proyecto>[] = [
     ),
     cell: ({ row }) => {
       const status = row.getValue('estado') as ProjectStatus
-      const label = projectStatusLabels[status] ?? status
-      const colorClass = projectStatusColors[status] ?? 'bg-gray-100 text-gray-800 border-gray-200'
-      const icon = statusIcons[status] ?? null
-      return (
-        <Badge
-          variant='outline'
-          className={`flex w-fit items-center gap-1 ${colorClass}`}
-        >
-          {icon}
-          {label}
-        </Badge>
-      )
+      return <ProyectoStatusBadge status={status} />
     },
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id))

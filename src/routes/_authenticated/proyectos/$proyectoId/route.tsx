@@ -7,13 +7,13 @@ import { getClientById } from '@/lib/client-service'
 import { type Project } from '@/lib/types'
 import { type Client } from '@/lib/client-service'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { Search } from '@/components/search'
-import { projectStatusLabels, projectStatusColors, type ProjectStatus } from '@/features/proyectos/data/schema'
+import { type ProjectStatus } from '@/features/proyectos/data/schema'
+import { ProyectoStatusBadge } from '@/features/proyectos/components/proyecto-status-badge'
 import { ProyectoDetailContext } from '@/features/proyectos/hooks/use-proyecto-detail-context'
 
 export const Route = createFileRoute('/_authenticated/proyectos/$proyectoId')({
@@ -132,12 +132,7 @@ function ProyectoDetailLayout() {
             </div>
           </div>
           <div className='mt-4 flex items-center gap-3'>
-            <Badge
-              variant='outline'
-              className={projectStatusColors[proyecto.estado as ProjectStatus] ?? 'bg-gray-100 text-gray-800 border-gray-200'}
-            >
-              {projectStatusLabels[proyecto.estado as ProjectStatus] ?? proyecto.estado}
-            </Badge>
+            <ProyectoStatusBadge status={proyecto.estado as ProjectStatus} />
             {cliente && (
               <span className='text-sm text-muted-foreground'>
                 Cliente: <span className='font-medium'>{cliente.nombre_completo}</span>
