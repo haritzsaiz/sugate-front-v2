@@ -50,6 +50,7 @@ const currencyFormatter = new Intl.NumberFormat('es-ES', {
   currency: 'EUR',
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
+  useGrouping: true,
 })
 
 const formatCurrency = (amount: number) => currencyFormatter.format(amount)

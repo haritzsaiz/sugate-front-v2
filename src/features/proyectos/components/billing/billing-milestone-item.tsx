@@ -105,6 +105,7 @@ export function BillingMilestoneItem({
     currency: 'EUR',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
+    useGrouping: true,
   })
 
   const displayAmount = useMemo(() => {
