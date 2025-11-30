@@ -37,6 +37,9 @@ function AmountCell({
 export const finanzasColumns: ColumnDef<FinancialRecord>[] = [
   {
     id: 'select',
+    size: 40,
+    minSize: 40,
+    maxSize: 40,
     header: ({ table }) => (
       <Checkbox
         checked={

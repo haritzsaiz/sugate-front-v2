@@ -157,7 +157,9 @@ export function FinanzasTable({
                   <TableHead
                     key={header.id}
                     colSpan={header.colSpan}
+                    style={{ width: header.column.id === 'select' ? 40 : undefined }}
                     className={cn(
+                      header.column.id === 'select' && 'w-10',
                       header.column.id === 'totalBudget' ||
                         header.column.id === 'paymentsReceived' ||
                         header.column.id === 'facturado' ||
@@ -192,7 +194,9 @@ export function FinanzasTable({
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
+                      style={{ width: cell.column.id === 'select' ? 40 : undefined }}
                       className={cn(
+                        cell.column.id === 'select' && 'w-10',
                         cell.column.id === 'totalBudget' ||
                           cell.column.id === 'paymentsReceived' ||
                           cell.column.id === 'facturado' ||
@@ -224,30 +228,59 @@ export function FinanzasTable({
           {table.getFilteredRowModel().rows.length > 0 && (
             <TableFooter className='bg-muted/50'>
               <TableRow>
-                <TableCell colSpan={5} className='font-semibold'>
-                  Totales ({table.getFilteredRowModel().rows.length} registros)
-                </TableCell>
-                <TableCell className='text-right font-semibold'>
-                  {formatCurrency(totals.totalBudget)}
-                </TableCell>
-                <TableCell className='text-right font-semibold text-green-600'>
-                  {formatCurrency(totals.paymentsReceived)}
-                </TableCell>
-                <TableCell className='text-right font-semibold text-blue-600'>
-                  {formatCurrency(totals.facturado)}
-                </TableCell>
-                <TableCell className='text-right font-semibold text-amber-600'>
-                  {formatCurrency(totals.pendiente_factura)}
-                </TableCell>
-                <TableCell
-                  className={cn(
-                    'text-right font-semibold',
-                    totals.unassigned >= 0 ? 'text-purple-600' : 'text-red-600'
-                  )}
-                >
-                  {formatCurrency(totals.unassigned)}
-                </TableCell>
-                <TableCell />
+                {table.getVisibleLeafColumns().map((column, index) => {
+                  // First visible column shows the totals label
+                  if (index === 0) {
+                    return (
+                      <TableCell key={column.id} className='font-semibold'>
+                        Totales ({table.getFilteredRowModel().rows.length} registros)
+                      </TableCell>
+                    )
+                  }
+
+                  // Render appropriate total based on column id
+                  switch (column.id) {
+                    case 'totalBudget':
+                      return (
+                        <TableCell key={column.id} className='text-right font-semibold'>
+                          {formatCurrency(totals.totalBudget)}
+                        </TableCell>
+                      )
+                    case 'paymentsReceived':
+                      return (
+                        <TableCell key={column.id} className='text-right font-semibold text-green-600'>
+                          {formatCurrency(totals.paymentsReceived)}
+                        </TableCell>
+                      )
+                    case 'facturado':
+                      return (
+                        <TableCell key={column.id} className='text-right font-semibold text-blue-600'>
+                          {formatCurrency(totals.facturado)}
+                        </TableCell>
+                      )
+                    case 'pendiente_factura':
+                      return (
+                        <TableCell key={column.id} className='text-right font-semibold text-amber-600'>
+                          {formatCurrency(totals.pendiente_factura)}
+                        </TableCell>
+                      )
+                    case 'unassigned':
+                      return (
+                        <TableCell
+                          key={column.id}
+                          className={cn(
+                            'text-right font-semibold',
+                            totals.unassigned >= 0 ? 'text-purple-600' : 'text-red-600'
+                          )}
+                        >
+                          {formatCurrency(totals.unassigned)}
+                        </TableCell>
+                      )
+                    default:
+                      // Empty cell for non-numeric columns
+                      return <TableCell key={column.id} />
+                  }
+                })}
               </TableRow>
             </TableFooter>
           )}
