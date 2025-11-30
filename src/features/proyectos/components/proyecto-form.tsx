@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { useNavigate } from '@tanstack/react-router'
 import { z } from 'zod'
-import { MapPin, Save, X, Loader2, Building, Check, ChevronsUpDown } from 'lucide-react'
+import { MapPin, Save, X, Loader2, Building, Check, ChevronsUpDown, User, Mail, Phone, CreditCard } from 'lucide-react'
 import { toast } from 'sonner'
 import { createProject } from '@/lib/project-service'
 import { getAllClients, getClientById, type Client } from '@/lib/client-service'
@@ -31,6 +31,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
+import { Card, CardContent } from '@/components/ui/card'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
@@ -291,6 +292,44 @@ export function ProyectoForm() {
                     </FormItem>
                   )}
                 />
+
+                {/* Selected Client Details */}
+                {selectedCliente && (
+                  <Card className='mt-4 border-primary/20 bg-primary/5'>
+                    <CardContent className='pt-4'>
+                      <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4'>
+                        <div className='flex items-start gap-2'>
+                          <User className='mt-0.5 h-4 w-4 text-muted-foreground' />
+                          <div>
+                            <p className='text-xs font-medium text-muted-foreground'>Nombre completo</p>
+                            <p className='text-sm font-medium'>{selectedCliente.nombre_completo}</p>
+                          </div>
+                        </div>
+                        <div className='flex items-start gap-2'>
+                          <CreditCard className='mt-0.5 h-4 w-4 text-muted-foreground' />
+                          <div>
+                            <p className='text-xs font-medium text-muted-foreground'>DNI/NIE</p>
+                            <p className='text-sm font-medium'>{selectedCliente.dni || '—'}</p>
+                          </div>
+                        </div>
+                        <div className='flex items-start gap-2'>
+                          <Mail className='mt-0.5 h-4 w-4 text-muted-foreground' />
+                          <div>
+                            <p className='text-xs font-medium text-muted-foreground'>Email</p>
+                            <p className='text-sm font-medium'>{selectedCliente.email || '—'}</p>
+                          </div>
+                        </div>
+                        <div className='flex items-start gap-2'>
+                          <Phone className='mt-0.5 h-4 w-4 text-muted-foreground' />
+                          <div>
+                            <p className='text-xs font-medium text-muted-foreground'>Teléfono</p>
+                            <p className='text-sm font-medium'>{selectedCliente.telefono || '—'}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </div>
 

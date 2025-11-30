@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { z } from 'zod'
-import { MapPin, Save, X, Loader2, Building, AlertCircle } from 'lucide-react'
+import { MapPin, Save, X, Loader2, Building, AlertCircle, User, Mail, Phone, CreditCard } from 'lucide-react'
 import { toast } from 'sonner'
 import { getProjectById, updateProject } from '@/lib/project-service'
 import { getAllClients, type Client } from '@/lib/client-service'
@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Card, CardContent } from '@/components/ui/card'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
@@ -222,28 +223,69 @@ export function ProyectoEditForm() {
                 <FormField
                   control={form.control}
                   name='id_cliente'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        Cliente <span className='text-destructive'>*</span>
-                      </FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={loadingClientes ? 'Cargando clientes...' : 'Selecciona un cliente'} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {clientes.map((cliente) => (
-                            <SelectItem key={cliente._id} value={cliente._id}>
-                              {cliente.nombre_completo}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const selectedCliente = clientes.find(c => c._id === field.value)
+                    return (
+                      <FormItem>
+                        <FormLabel>
+                          Cliente <span className='text-destructive'>*</span>
+                        </FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder={loadingClientes ? 'Cargando clientes...' : 'Selecciona un cliente'} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {clientes.map((cliente) => (
+                              <SelectItem key={cliente._id} value={cliente._id}>
+                                {cliente.nombre_completo}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+
+                        {/* Selected Client Details */}
+                        {selectedCliente && (
+                          <Card className='mt-4 border-primary/20 bg-primary/5'>
+                            <CardContent className='pt-4'>
+                              <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4'>
+                                <div className='flex items-start gap-2'>
+                                  <User className='mt-0.5 h-4 w-4 text-muted-foreground' />
+                                  <div>
+                                    <p className='text-xs font-medium text-muted-foreground'>Nombre completo</p>
+                                    <p className='text-sm font-medium'>{selectedCliente.nombre_completo}</p>
+                                  </div>
+                                </div>
+                                <div className='flex items-start gap-2'>
+                                  <CreditCard className='mt-0.5 h-4 w-4 text-muted-foreground' />
+                                  <div>
+                                    <p className='text-xs font-medium text-muted-foreground'>DNI/NIE</p>
+                                    <p className='text-sm font-medium'>{selectedCliente.dni || '—'}</p>
+                                  </div>
+                                </div>
+                                <div className='flex items-start gap-2'>
+                                  <Mail className='mt-0.5 h-4 w-4 text-muted-foreground' />
+                                  <div>
+                                    <p className='text-xs font-medium text-muted-foreground'>Email</p>
+                                    <p className='text-sm font-medium'>{selectedCliente.email || '—'}</p>
+                                  </div>
+                                </div>
+                                <div className='flex items-start gap-2'>
+                                  <Phone className='mt-0.5 h-4 w-4 text-muted-foreground' />
+                                  <div>
+                                    <p className='text-xs font-medium text-muted-foreground'>Teléfono</p>
+                                    <p className='text-sm font-medium'>{selectedCliente.telefono || '—'}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
+                      </FormItem>
+                    )
+                  }}
                 />
               </div>
             </div>

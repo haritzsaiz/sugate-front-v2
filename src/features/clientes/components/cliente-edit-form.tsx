@@ -190,7 +190,7 @@ export function ClienteEditForm() {
         </div>
 
         <Form {...form}>
-          <form id='cliente-edit-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
+          <form id='cliente-edit-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-6' autoComplete='off' data-form-type='other'>
             {/* Información Personal */}
             <div className='space-y-4'>
               <div className='flex items-center gap-2 text-sm font-medium'>
@@ -207,7 +207,7 @@ export function ClienteEditForm() {
                         Nombre <span className='text-destructive'>*</span>
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder='Introduce el nombre' {...field} />
+                        <Input placeholder='Introduce el nombre' autoComplete='off' data-lpignore='true' data-1p-ignore {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -222,7 +222,7 @@ export function ClienteEditForm() {
                         Primer Apellido <span className='text-destructive'>*</span>
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder='Introduce el primer apellido' {...field} />
+                        <Input placeholder='Introduce el primer apellido' autoComplete='off' data-lpignore='true' data-1p-ignore {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -235,7 +235,7 @@ export function ClienteEditForm() {
                     <FormItem>
                       <FormLabel>Segundo Apellido</FormLabel>
                       <FormControl>
-                        <Input placeholder='Introduce el segundo apellido (opcional)' {...field} />
+                        <Input placeholder='Introduce el segundo apellido (opcional)' autoComplete='off' data-lpignore='true' data-1p-ignore {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -248,7 +248,7 @@ export function ClienteEditForm() {
                     <FormItem>
                       <FormLabel>DNI/NIE</FormLabel>
                       <FormControl>
-                        <Input placeholder='12345678A (opcional)' {...field} />
+                        <Input placeholder='12345678A (opcional)' autoComplete='off' data-lpignore='true' data-1p-ignore {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -274,6 +274,9 @@ export function ClienteEditForm() {
                         <Input
                           type='email'
                           placeholder='ejemplo@correo.com (opcional)'
+                          autoComplete='off'
+                          data-lpignore='true'
+                          data-1p-ignore
                           {...field}
                         />
                       </FormControl>
@@ -288,7 +291,7 @@ export function ClienteEditForm() {
                     <FormItem>
                       <FormLabel>Teléfono</FormLabel>
                       <FormControl>
-                        <Input placeholder='666123456' {...field} />
+                        <Input placeholder='666123456' autoComplete='off' data-lpignore='true' data-1p-ignore {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
