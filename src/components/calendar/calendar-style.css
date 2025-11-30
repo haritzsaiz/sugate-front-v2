@@ -1,0 +1,172 @@
+/* Custom styles for react-big-calendar */
+
+.rbc-calendar {
+  font-family: inherit;
+}
+
+.rbc-header {
+  padding: 8px 4px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: capitalize;
+  color: hsl(var(--muted-foreground));
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.rbc-month-view {
+  border: none;
+  border-radius: 0.5rem;
+}
+
+.rbc-month-row {
+  border: none;
+}
+
+.rbc-day-bg {
+  border-left: 1px solid hsl(var(--border));
+}
+
+.rbc-day-bg:first-child {
+  border-left: none;
+}
+
+.rbc-off-range-bg {
+  background-color: hsl(var(--muted) / 0.3);
+}
+
+.rbc-today {
+  background-color: hsl(var(--primary) / 0.1);
+}
+
+.rbc-date-cell {
+  padding: 4px 8px;
+  text-align: right;
+  font-size: 0.875rem;
+}
+
+.rbc-date-cell > a {
+  color: hsl(var(--foreground));
+}
+
+.rbc-off-range {
+  color: hsl(var(--muted-foreground));
+}
+
+.rbc-event {
+  padding: 2px 4px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  border: none !important;
+}
+
+.rbc-event:focus {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+.rbc-event-content {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rbc-row-segment {
+  padding: 0 2px 2px 2px;
+}
+
+.rbc-show-more {
+  color: hsl(var(--primary));
+  font-weight: 500;
+  font-size: 0.75rem;
+  background: transparent;
+  padding: 2px 4px;
+}
+
+.rbc-show-more:hover {
+  text-decoration: underline;
+}
+
+/* Week and Day views */
+.rbc-time-view {
+  border: none;
+  border-radius: 0.5rem;
+}
+
+.rbc-time-header {
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.rbc-time-content {
+  border-top: none;
+}
+
+.rbc-time-slot {
+  border-top: 1px solid hsl(var(--border) / 0.5);
+}
+
+.rbc-timeslot-group {
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.rbc-time-gutter {
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.rbc-current-time-indicator {
+  background-color: hsl(var(--destructive));
+  height: 2px;
+}
+
+/* Drag and drop styles */
+.rbc-addons-dnd .rbc-addons-dnd-resize-ns-icon,
+.rbc-addons-dnd .rbc-addons-dnd-resize-ew-icon {
+  display: none;
+}
+
+.rbc-addons-dnd .rbc-addons-dnd-resizable {
+  position: relative;
+}
+
+.rbc-addons-dnd .rbc-addons-dnd-resize-ns-anchor {
+  cursor: ns-resize;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 8px;
+}
+
+.rbc-addons-dnd .rbc-addons-dnd-resize-ew-anchor {
+  cursor: ew-resize;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+}
+
+.rbc-addons-dnd .rbc-addons-dnd-resize-ew-anchor:first-child {
+  left: 0;
+}
+
+.rbc-addons-dnd .rbc-addons-dnd-resize-ew-anchor:last-child {
+  right: 0;
+}
+
+.rbc-addons-dnd-dragged-event {
+  opacity: 0.5;
+}
+
+.rbc-addons-dnd .rbc-addons-dnd-drag-preview {
+  opacity: 0.8;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Dark mode adjustments */
+.dark .rbc-off-range-bg {
+  background-color: hsl(var(--muted) / 0.2);
+}
+
+.dark .rbc-today {
+  background-color: hsl(var(--primary) / 0.15);
+}
