@@ -37,12 +37,13 @@ import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { Search } from '@/components/search'
+import { OficinaSelector } from '@/components/oficina-selector'
 
 const formSchema = z.object({
   id_cliente: z.string().min(1, 'El cliente es requerido'),
   direccion: z.string().min(1, 'La dirección es requerida'),
   ciudad: z.string().min(1, 'La ciudad es requerida'),
-  oficina: z.string().optional(),
+  oficina: z.string().min(1, 'La oficina es requerida'),
 })
 
 type ProyectoFormData = z.infer<typeof formSchema>
@@ -375,9 +376,15 @@ export function ProyectoForm() {
                   name='oficina'
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Oficina</FormLabel>
+                      <FormLabel>
+                        Oficina <span className='text-destructive'>*</span>
+                      </FormLabel>
                       <FormControl>
-                        <Input placeholder='Oficina (opcional)' {...field} />
+                        <OficinaSelector
+                          value={field.value}
+                          onValueChange={(value) => field.onChange(value)}
+                          placeholder='Seleccionar oficina...'
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
