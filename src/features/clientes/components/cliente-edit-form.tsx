@@ -190,12 +190,12 @@ export function ClienteEditForm() {
         </div>
 
         <Form {...form}>
-          <form id='cliente-edit-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
+          <form id='cliente-edit-form' onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
             {/* Información Personal */}
-            <div className='rounded-lg border p-6'>
-              <div className='mb-4 flex items-center gap-2'>
-                <User className='h-5 w-5 text-primary' />
-                <h3 className='text-lg font-medium'>Información Personal</h3>
+            <div className='space-y-4'>
+              <div className='flex items-center gap-2 text-sm font-medium'>
+                <User className='h-4 w-4 text-muted-foreground' />
+                <span>Información Personal</span>
               </div>
               <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4'>
                 <FormField
@@ -258,10 +258,10 @@ export function ClienteEditForm() {
             </div>
 
             {/* Información de Contacto */}
-            <div className='rounded-lg border p-6'>
-              <div className='mb-4 flex items-center gap-2'>
-                <Mail className='h-5 w-5 text-primary' />
-                <h3 className='text-lg font-medium'>Información de Contacto</h3>
+            <div className='space-y-4'>
+              <div className='flex items-center gap-2 text-sm font-medium'>
+                <Mail className='h-4 w-4 text-muted-foreground' />
+                <span>Información de Contacto</span>
               </div>
               <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4'>
                 <FormField
