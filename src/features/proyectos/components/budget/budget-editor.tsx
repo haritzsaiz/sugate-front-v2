@@ -3,7 +3,7 @@ import { type Project, type BudgetSection, type BudgetItem, type BudgetData } fr
 import { type Client } from '@/lib/client-service'
 import { getBillingByProjectId } from '@/lib/billing-service'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -28,7 +28,6 @@ import {
   Save,
   Trash2,
   GripVertical,
-  Receipt,
   Calculator,
   FileText,
   ChevronDown,
@@ -356,136 +355,108 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails }: BudgetEdi
 
   return (
     <div className='space-y-6'>
+      {/* Header */}
+      <div className='flex items-center justify-between'>
+        <div>
+          <div className='flex items-center gap-2'>
+            <h2 className='text-xl font-bold'>
+              {isNewBudget ? 'Nuevo Presupuesto' : 'Presupuesto'}
+            </h2>
+            {selectedBudgetId === approvedBudgetId && !isNewBudget && (
+              <Badge variant='default' className='bg-green-600 text-xs'>
+                <CheckCircle className='mr-1 h-3 w-3' />
+                Aprobado
+              </Badge>
+            )}
+          </div>
+          <p className='text-sm text-muted-foreground'>Desglose de conceptos y costes del proyecto</p>
+        </div>
+        <div className='flex items-center gap-2'>
+          {sections.length > 0 && (
+            <Button
+              variant='outline'
+              size='sm'
+              className='gap-2'
+              onClick={() => setPreviewOpen(true)}
+            >
+              <Eye className='h-4 w-4' />
+              Vista Previa
+            </Button>
+          )}
+          <Button
+            onClick={handleSave}
+            size='sm'
+            className='gap-2'
+          >
+            <Save className='h-4 w-4' />
+            Guardar
+          </Button>
+        </div>
+      </div>
+
       {/* Budget Selector */}
       {presupuestos.length > 0 && (
-        <Card>
-          <CardContent className='p-4'>
-            <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
-              <div className='flex items-center gap-3'>
-                <Receipt className='h-5 w-5 text-muted-foreground' />
-                <div>
-                  <p className='text-sm font-medium'>Seleccionar Presupuesto</p>
-                  <p className='text-xs text-muted-foreground'>
-                    {presupuestos.length} presupuesto{presupuestos.length !== 1 ? 's' : ''} disponible{presupuestos.length !== 1 ? 's' : ''}
-                  </p>
+        <div className='flex items-center gap-3'>
+          <Select
+            value={isNewBudget ? 'new' : (selectedBudgetId || '')}
+            onValueChange={handleBudgetChange}
+          >
+            <SelectTrigger className='w-[300px]'>
+              <SelectValue placeholder='Selecciona un presupuesto' />
+            </SelectTrigger>
+            <SelectContent>
+              {presupuestos.map((budget) => (
+                <SelectItem key={budget.id} value={budget.id}>
+                  <div className='flex items-center gap-2'>
+                    {budget.id === approvedBudgetId && (
+                      <CheckCircle className='h-4 w-4 shrink-0 text-green-600' />
+                    )}
+                    <span className='truncate'>
+                      {formatCurrency(budget.total_con_iva)} - {formatDate(budget.created_at)}
+                    </span>
+                    {budget.id === approvedBudgetId && (
+                      <span className='shrink-0 text-xs text-green-600'>Aprobado</span>
+                    )}
+                  </div>
+                </SelectItem>
+              ))}
+              <SelectItem value='new'>
+                <div className='flex items-center gap-2 text-primary'>
+                  <FilePlus className='h-4 w-4' />
+                  <span>Crear nuevo presupuesto</span>
                 </div>
-              </div>
-              <div className='flex items-center gap-2'>
-                <Select
-                  value={isNewBudget ? 'new' : (selectedBudgetId || '')}
-                  onValueChange={handleBudgetChange}
-                >
-                  <SelectTrigger className='w-[300px]'>
-                    <SelectValue placeholder='Selecciona un presupuesto' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {presupuestos.map((budget) => (
-                      <SelectItem key={budget.id} value={budget.id}>
-                        <div className='flex items-center gap-2'>
-                          {budget.id === approvedBudgetId && (
-                            <CheckCircle className='h-4 w-4 text-green-600' />
-                          )}
-                          <span>
-                            {formatCurrency(budget.total_con_iva)} - {formatDate(budget.created_at)}
-                          </span>
-                          {budget.id === approvedBudgetId && (
-                            <Badge variant='default' className='ml-2 bg-green-600 text-xs'>
-                              Aprobado
-                            </Badge>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
-                    <SelectItem value='new'>
-                      <div className='flex items-center gap-2 text-primary'>
-                        <FilePlus className='h-4 w-4' />
-                        <span>Crear nuevo presupuesto</span>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          <span className='text-xs text-muted-foreground'>
+            {presupuestos.length} presupuesto{presupuestos.length !== 1 ? 's' : ''} disponible{presupuestos.length !== 1 ? 's' : ''}
+          </span>
+        </div>
       )}
 
-      {/* Header Card */}
-      <Card className='overflow-hidden border-none shadow-md'>
-        <div className='bg-gradient-to-r from-primary to-primary/80 p-6 text-primary-foreground'>
-          <div className='flex items-start justify-between'>
-            <div className='flex items-center gap-4'>
-              <div className='flex h-12 w-12 items-center justify-center rounded-xl bg-white/20'>
-                <Receipt className='h-6 w-6' />
-              </div>
-              <div>
-                <div className='flex items-center gap-2'>
-                  <h2 className='text-xl font-semibold'>
-                    {isNewBudget ? 'Nuevo Presupuesto' : 'Presupuesto'}
-                  </h2>
-                  {selectedBudgetId === approvedBudgetId && !isNewBudget && (
-                    <Badge variant='secondary' className='bg-green-500 text-white'>
-                      <CheckCircle className='mr-1 h-3 w-3' />
-                      Aprobado
-                    </Badge>
-                  )}
-                </div>
-                <p className='text-sm opacity-90'>{project.direccion}</p>
-                {client && (
-                  <p className='text-sm opacity-75'>
-                    Cliente: {client.nombre_completo}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className='flex items-center gap-2'>
-              {sections.length > 0 && (
-                <Button
-                  variant='secondary'
-                  size='sm'
-                  className='gap-2'
-                  onClick={() => setPreviewOpen(true)}
-                >
-                  <Eye className='h-4 w-4' />
-                  Vista Previa
-                </Button>
-              )}
-              <Button
-                onClick={handleSave}
-                variant='secondary'
-                className='gap-2'
-              >
-                <Save className='h-4 w-4' />
-                Guardar
-              </Button>
-            </div>
-          </div>
+      {/* Stats Bar */}
+      <div className='grid grid-cols-2 gap-4 sm:grid-cols-4'>
+        <div className='rounded-lg border bg-card p-4 text-center'>
+          <p className='text-2xl font-bold'>{sections.length}</p>
+          <p className='text-xs text-muted-foreground'>Secciones</p>
         </div>
-
-        {/* Stats Bar */}
-        <div className='grid grid-cols-2 divide-x border-t sm:grid-cols-4'>
-          <div className='p-4 text-center'>
-            <p className='text-2xl font-bold'>{sections.length}</p>
-            <p className='text-xs text-muted-foreground'>Secciones</p>
-          </div>
-          <div className='p-4 text-center'>
-            <p className='text-2xl font-bold'>{calculations.totalConcepts}</p>
-            <p className='text-xs text-muted-foreground'>Conceptos</p>
-          </div>
-          <div className='p-4 text-center'>
-            <p className='text-2xl font-bold text-primary'>
-              {formatCurrency(calculations.subtotal)}
-            </p>
-            <p className='text-xs text-muted-foreground'>Subtotal</p>
-          </div>
-          <div className='p-4 text-center'>
-            <p className='text-2xl font-bold text-green-600'>
-              {formatCurrency(calculations.total)}
-            </p>
-            <p className='text-xs text-muted-foreground'>Total con IVA</p>
-          </div>
+        <div className='rounded-lg border bg-card p-4 text-center'>
+          <p className='text-2xl font-bold'>{calculations.totalConcepts}</p>
+          <p className='text-xs text-muted-foreground'>Conceptos</p>
         </div>
-      </Card>
+        <div className='rounded-lg border bg-card p-4 text-center'>
+          <p className='text-2xl font-bold text-primary'>
+            {formatCurrency(calculations.subtotal)}
+          </p>
+          <p className='text-xs text-muted-foreground'>Subtotal</p>
+        </div>
+        <div className='rounded-lg border bg-card p-4 text-center'>
+          <p className='text-2xl font-bold text-green-600'>
+            {formatCurrency(calculations.total)}
+          </p>
+          <p className='text-xs text-muted-foreground'>Total con IVA</p>
+        </div>
+      </div>
 
       {/* Empty State */}
       {sections.length === 0 && (
@@ -674,17 +645,14 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails }: BudgetEdi
         </Button>
       )}
 
-      {/* Totals Card */}
+      {/* Totals Section */}
       {sections.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className='flex items-center gap-2 text-lg'>
-              <Calculator className='h-5 w-5' />
-              Resumen
-            </CardTitle>
-            <CardDescription>Desglose de importes y totales</CardDescription>
-          </CardHeader>
-          <CardContent>
+        <div className='space-y-4'>
+          <div className='flex items-center gap-2'>
+            <Calculator className='h-4 w-4 text-muted-foreground' />
+            <h3 className='text-sm font-medium'>Resumen</h3>
+          </div>
+          <div className='rounded-lg border bg-card p-4'>
             <div className='space-y-4'>
               {/* Section breakdown */}
               <div className='space-y-2'>
@@ -760,8 +728,8 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails }: BudgetEdi
                 </span>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Preview Dialog */}

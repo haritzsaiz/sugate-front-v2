@@ -339,9 +339,9 @@ export function BillingTab({ project }: BillingTabProps) {
     <div className='space-y-6'>
       {/* Header */}
       <div className='flex items-center justify-between'>
-        <div className='flex items-center gap-3'>
-          <Receipt className='h-5 w-5 text-muted-foreground' />
-          <h2 className='text-lg font-medium'>Facturación</h2>
+        <div>
+          <h2 className='text-xl font-bold'>Facturación</h2>
+          <p className='text-sm text-muted-foreground'>Gestión de hitos y cobros del proyecto</p>
         </div>
         {milestones.length > 0 && (
           <Button
