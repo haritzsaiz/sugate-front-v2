@@ -1,0 +1,7 @@
+export { ResumenTab } from './resumen-tab'
+export { DetallesTab } from './detalles-tab'
+export { UbicacionTab } from './ubicacion-tab'
+export { PresupuestoTab } from './presupuesto-tab'
+export { FacturacionTab } from './facturacion-tab'
+export { AdminTab } from './admin-tab'
+export { FotosTab } from './fotos-tab'

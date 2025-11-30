@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select'
 import { Clock, Pencil, Save, X, Loader2, Play, CheckCircle, XCircle, FileText, FileX } from 'lucide-react'
 import { BudgetEditor } from './budget'
+import { BillingTab } from './billing'
 import { OficinaBadge } from './oficina-badge'
 import { projectStatusLabels, projectStatusColors } from '../data/schema'
 import { toast } from 'sonner'
@@ -613,13 +614,10 @@ export function ProyectoDetailTabs({ proyecto, cliente, activeTab, onProjectUpda
 
       {/* Facturación Section */}
       {activeTab === 'facturacion' && (
-        <>
-          <div>
-            <h2 className='text-xl font-bold'>Facturación</h2>
-            <p className='text-sm text-muted-foreground'>Información de facturas</p>
-          </div>
-          <p className='text-muted-foreground'>No hay facturas asociadas</p>
-        </>
+        <BillingTab 
+          project={proyecto} 
+          onProjectUpdate={onProjectUpdate}
+        />
       )}
 
       {/* Admin Section */}

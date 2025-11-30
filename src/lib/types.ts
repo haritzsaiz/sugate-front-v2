@@ -110,17 +110,26 @@ export interface BudgetData {
 
 // Billing Types - Mapped from Go backend models
 
+export type BillingMilestoneStatus = 'pendiente' | 'facturado' | 'cobrado';
+export type BillingMilestoneAmountType = 'porcentaje' | 'euro';
+
 export interface HitoFacturacion {
+  id: string;
   nombre: string;
-  porcentaje: number;
+  tipo_de_importe: BillingMilestoneAmountType;
   importe: number;
-  facturado: boolean;
+  total: number;
+  estado: BillingMilestoneStatus;
   fecha_facturacion?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Billing {
   id: string;
   id_proyecto: string;
+  direccion_facturacion?: string;
+  codigo_postal?: string;
   presupuesto: BudgetData;
   hitos_facturacion: HitoFacturacion[];
   created_at: string;

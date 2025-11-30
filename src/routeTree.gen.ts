@@ -19,9 +19,17 @@ import { Route as AuthenticatedProyectosIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedOficinasIndexRouteImport } from './routes/_authenticated/oficinas/index'
 import { Route as AuthenticatedClientesIndexRouteImport } from './routes/_authenticated/clientes/index'
 import { Route as AuthenticatedProyectosNuevoRouteImport } from './routes/_authenticated/proyectos/nuevo'
-import { Route as AuthenticatedProyectosProyectoIdRouteImport } from './routes/_authenticated/proyectos/$proyectoId'
 import { Route as AuthenticatedClientesNuevoRouteImport } from './routes/_authenticated/clientes/nuevo'
 import { Route as AuthenticatedClientesClienteIdRouteImport } from './routes/_authenticated/clientes/$clienteId'
+import { Route as AuthenticatedProyectosProyectoIdRouteRouteImport } from './routes/_authenticated/proyectos/$proyectoId/route'
+import { Route as AuthenticatedProyectosProyectoIdIndexRouteImport } from './routes/_authenticated/proyectos/$proyectoId/index'
+import { Route as AuthenticatedProyectosProyectoIdUbicacionRouteImport } from './routes/_authenticated/proyectos/$proyectoId/ubicacion'
+import { Route as AuthenticatedProyectosProyectoIdResumenRouteImport } from './routes/_authenticated/proyectos/$proyectoId/resumen'
+import { Route as AuthenticatedProyectosProyectoIdPresupuestoRouteImport } from './routes/_authenticated/proyectos/$proyectoId/presupuesto'
+import { Route as AuthenticatedProyectosProyectoIdFotosRouteImport } from './routes/_authenticated/proyectos/$proyectoId/fotos'
+import { Route as AuthenticatedProyectosProyectoIdFacturacionRouteImport } from './routes/_authenticated/proyectos/$proyectoId/facturacion'
+import { Route as AuthenticatedProyectosProyectoIdDetallesRouteImport } from './routes/_authenticated/proyectos/$proyectoId/detalles'
+import { Route as AuthenticatedProyectosProyectoIdAdminRouteImport } from './routes/_authenticated/proyectos/$proyectoId/admin'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -76,12 +84,6 @@ const AuthenticatedProyectosNuevoRoute =
     path: '/proyectos/nuevo',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedProyectosProyectoIdRoute =
-  AuthenticatedProyectosProyectoIdRouteImport.update({
-    id: '/proyectos/$proyectoId',
-    path: '/proyectos/$proyectoId',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedClientesNuevoRoute =
   AuthenticatedClientesNuevoRouteImport.update({
     id: '/clientes/nuevo',
@@ -94,20 +96,82 @@ const AuthenticatedClientesClienteIdRoute =
     path: '/clientes/$clienteId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedProyectosProyectoIdRouteRoute =
+  AuthenticatedProyectosProyectoIdRouteRouteImport.update({
+    id: '/proyectos/$proyectoId',
+    path: '/proyectos/$proyectoId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProyectosProyectoIdIndexRoute =
+  AuthenticatedProyectosProyectoIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedProyectosProyectoIdRouteRoute,
+  } as any)
+const AuthenticatedProyectosProyectoIdUbicacionRoute =
+  AuthenticatedProyectosProyectoIdUbicacionRouteImport.update({
+    id: '/ubicacion',
+    path: '/ubicacion',
+    getParentRoute: () => AuthenticatedProyectosProyectoIdRouteRoute,
+  } as any)
+const AuthenticatedProyectosProyectoIdResumenRoute =
+  AuthenticatedProyectosProyectoIdResumenRouteImport.update({
+    id: '/resumen',
+    path: '/resumen',
+    getParentRoute: () => AuthenticatedProyectosProyectoIdRouteRoute,
+  } as any)
+const AuthenticatedProyectosProyectoIdPresupuestoRoute =
+  AuthenticatedProyectosProyectoIdPresupuestoRouteImport.update({
+    id: '/presupuesto',
+    path: '/presupuesto',
+    getParentRoute: () => AuthenticatedProyectosProyectoIdRouteRoute,
+  } as any)
+const AuthenticatedProyectosProyectoIdFotosRoute =
+  AuthenticatedProyectosProyectoIdFotosRouteImport.update({
+    id: '/fotos',
+    path: '/fotos',
+    getParentRoute: () => AuthenticatedProyectosProyectoIdRouteRoute,
+  } as any)
+const AuthenticatedProyectosProyectoIdFacturacionRoute =
+  AuthenticatedProyectosProyectoIdFacturacionRouteImport.update({
+    id: '/facturacion',
+    path: '/facturacion',
+    getParentRoute: () => AuthenticatedProyectosProyectoIdRouteRoute,
+  } as any)
+const AuthenticatedProyectosProyectoIdDetallesRoute =
+  AuthenticatedProyectosProyectoIdDetallesRouteImport.update({
+    id: '/detalles',
+    path: '/detalles',
+    getParentRoute: () => AuthenticatedProyectosProyectoIdRouteRoute,
+  } as any)
+const AuthenticatedProyectosProyectoIdAdminRoute =
+  AuthenticatedProyectosProyectoIdAdminRouteImport.update({
+    id: '/admin',
+    path: '/admin',
+    getParentRoute: () => AuthenticatedProyectosProyectoIdRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/logout-callback': typeof AuthLogoutCallbackRoute
   '/auth/silent-callback': typeof AuthSilentCallbackRoute
   '/': typeof AuthenticatedIndexRoute
+  '/proyectos/$proyectoId': typeof AuthenticatedProyectosProyectoIdRouteRouteWithChildren
   '/clientes/$clienteId': typeof AuthenticatedClientesClienteIdRoute
   '/clientes/nuevo': typeof AuthenticatedClientesNuevoRoute
-  '/proyectos/$proyectoId': typeof AuthenticatedProyectosProyectoIdRoute
   '/proyectos/nuevo': typeof AuthenticatedProyectosNuevoRoute
   '/clientes': typeof AuthenticatedClientesIndexRoute
   '/oficinas': typeof AuthenticatedOficinasIndexRoute
   '/proyectos': typeof AuthenticatedProyectosIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
+  '/proyectos/$proyectoId/admin': typeof AuthenticatedProyectosProyectoIdAdminRoute
+  '/proyectos/$proyectoId/detalles': typeof AuthenticatedProyectosProyectoIdDetallesRoute
+  '/proyectos/$proyectoId/facturacion': typeof AuthenticatedProyectosProyectoIdFacturacionRoute
+  '/proyectos/$proyectoId/fotos': typeof AuthenticatedProyectosProyectoIdFotosRoute
+  '/proyectos/$proyectoId/presupuesto': typeof AuthenticatedProyectosProyectoIdPresupuestoRoute
+  '/proyectos/$proyectoId/resumen': typeof AuthenticatedProyectosProyectoIdResumenRoute
+  '/proyectos/$proyectoId/ubicacion': typeof AuthenticatedProyectosProyectoIdUbicacionRoute
+  '/proyectos/$proyectoId/': typeof AuthenticatedProyectosProyectoIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/auth/callback': typeof AuthCallbackRoute
@@ -116,12 +180,19 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/clientes/$clienteId': typeof AuthenticatedClientesClienteIdRoute
   '/clientes/nuevo': typeof AuthenticatedClientesNuevoRoute
-  '/proyectos/$proyectoId': typeof AuthenticatedProyectosProyectoIdRoute
   '/proyectos/nuevo': typeof AuthenticatedProyectosNuevoRoute
   '/clientes': typeof AuthenticatedClientesIndexRoute
   '/oficinas': typeof AuthenticatedOficinasIndexRoute
   '/proyectos': typeof AuthenticatedProyectosIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
+  '/proyectos/$proyectoId/admin': typeof AuthenticatedProyectosProyectoIdAdminRoute
+  '/proyectos/$proyectoId/detalles': typeof AuthenticatedProyectosProyectoIdDetallesRoute
+  '/proyectos/$proyectoId/facturacion': typeof AuthenticatedProyectosProyectoIdFacturacionRoute
+  '/proyectos/$proyectoId/fotos': typeof AuthenticatedProyectosProyectoIdFotosRoute
+  '/proyectos/$proyectoId/presupuesto': typeof AuthenticatedProyectosProyectoIdPresupuestoRoute
+  '/proyectos/$proyectoId/resumen': typeof AuthenticatedProyectosProyectoIdResumenRoute
+  '/proyectos/$proyectoId/ubicacion': typeof AuthenticatedProyectosProyectoIdUbicacionRoute
+  '/proyectos/$proyectoId': typeof AuthenticatedProyectosProyectoIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -130,14 +201,22 @@ export interface FileRoutesById {
   '/auth/logout-callback': typeof AuthLogoutCallbackRoute
   '/auth/silent-callback': typeof AuthSilentCallbackRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/proyectos/$proyectoId': typeof AuthenticatedProyectosProyectoIdRouteRouteWithChildren
   '/_authenticated/clientes/$clienteId': typeof AuthenticatedClientesClienteIdRoute
   '/_authenticated/clientes/nuevo': typeof AuthenticatedClientesNuevoRoute
-  '/_authenticated/proyectos/$proyectoId': typeof AuthenticatedProyectosProyectoIdRoute
   '/_authenticated/proyectos/nuevo': typeof AuthenticatedProyectosNuevoRoute
   '/_authenticated/clientes/': typeof AuthenticatedClientesIndexRoute
   '/_authenticated/oficinas/': typeof AuthenticatedOficinasIndexRoute
   '/_authenticated/proyectos/': typeof AuthenticatedProyectosIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
+  '/_authenticated/proyectos/$proyectoId/admin': typeof AuthenticatedProyectosProyectoIdAdminRoute
+  '/_authenticated/proyectos/$proyectoId/detalles': typeof AuthenticatedProyectosProyectoIdDetallesRoute
+  '/_authenticated/proyectos/$proyectoId/facturacion': typeof AuthenticatedProyectosProyectoIdFacturacionRoute
+  '/_authenticated/proyectos/$proyectoId/fotos': typeof AuthenticatedProyectosProyectoIdFotosRoute
+  '/_authenticated/proyectos/$proyectoId/presupuesto': typeof AuthenticatedProyectosProyectoIdPresupuestoRoute
+  '/_authenticated/proyectos/$proyectoId/resumen': typeof AuthenticatedProyectosProyectoIdResumenRoute
+  '/_authenticated/proyectos/$proyectoId/ubicacion': typeof AuthenticatedProyectosProyectoIdUbicacionRoute
+  '/_authenticated/proyectos/$proyectoId/': typeof AuthenticatedProyectosProyectoIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -146,14 +225,22 @@ export interface FileRouteTypes {
     | '/auth/logout-callback'
     | '/auth/silent-callback'
     | '/'
+    | '/proyectos/$proyectoId'
     | '/clientes/$clienteId'
     | '/clientes/nuevo'
-    | '/proyectos/$proyectoId'
     | '/proyectos/nuevo'
     | '/clientes'
     | '/oficinas'
     | '/proyectos'
     | '/tasks'
+    | '/proyectos/$proyectoId/admin'
+    | '/proyectos/$proyectoId/detalles'
+    | '/proyectos/$proyectoId/facturacion'
+    | '/proyectos/$proyectoId/fotos'
+    | '/proyectos/$proyectoId/presupuesto'
+    | '/proyectos/$proyectoId/resumen'
+    | '/proyectos/$proyectoId/ubicacion'
+    | '/proyectos/$proyectoId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth/callback'
@@ -162,12 +249,19 @@ export interface FileRouteTypes {
     | '/'
     | '/clientes/$clienteId'
     | '/clientes/nuevo'
-    | '/proyectos/$proyectoId'
     | '/proyectos/nuevo'
     | '/clientes'
     | '/oficinas'
     | '/proyectos'
     | '/tasks'
+    | '/proyectos/$proyectoId/admin'
+    | '/proyectos/$proyectoId/detalles'
+    | '/proyectos/$proyectoId/facturacion'
+    | '/proyectos/$proyectoId/fotos'
+    | '/proyectos/$proyectoId/presupuesto'
+    | '/proyectos/$proyectoId/resumen'
+    | '/proyectos/$proyectoId/ubicacion'
+    | '/proyectos/$proyectoId'
   id:
     | '__root__'
     | '/_authenticated'
@@ -175,14 +269,22 @@ export interface FileRouteTypes {
     | '/auth/logout-callback'
     | '/auth/silent-callback'
     | '/_authenticated/'
+    | '/_authenticated/proyectos/$proyectoId'
     | '/_authenticated/clientes/$clienteId'
     | '/_authenticated/clientes/nuevo'
-    | '/_authenticated/proyectos/$proyectoId'
     | '/_authenticated/proyectos/nuevo'
     | '/_authenticated/clientes/'
     | '/_authenticated/oficinas/'
     | '/_authenticated/proyectos/'
     | '/_authenticated/tasks/'
+    | '/_authenticated/proyectos/$proyectoId/admin'
+    | '/_authenticated/proyectos/$proyectoId/detalles'
+    | '/_authenticated/proyectos/$proyectoId/facturacion'
+    | '/_authenticated/proyectos/$proyectoId/fotos'
+    | '/_authenticated/proyectos/$proyectoId/presupuesto'
+    | '/_authenticated/proyectos/$proyectoId/resumen'
+    | '/_authenticated/proyectos/$proyectoId/ubicacion'
+    | '/_authenticated/proyectos/$proyectoId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -264,13 +366,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProyectosNuevoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/proyectos/$proyectoId': {
-      id: '/_authenticated/proyectos/$proyectoId'
-      path: '/proyectos/$proyectoId'
-      fullPath: '/proyectos/$proyectoId'
-      preLoaderRoute: typeof AuthenticatedProyectosProyectoIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/clientes/nuevo': {
       id: '/_authenticated/clientes/nuevo'
       path: '/clientes/nuevo'
@@ -285,14 +380,113 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClientesClienteIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/proyectos/$proyectoId': {
+      id: '/_authenticated/proyectos/$proyectoId'
+      path: '/proyectos/$proyectoId'
+      fullPath: '/proyectos/$proyectoId'
+      preLoaderRoute: typeof AuthenticatedProyectosProyectoIdRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/proyectos/$proyectoId/': {
+      id: '/_authenticated/proyectos/$proyectoId/'
+      path: '/'
+      fullPath: '/proyectos/$proyectoId/'
+      preLoaderRoute: typeof AuthenticatedProyectosProyectoIdIndexRouteImport
+      parentRoute: typeof AuthenticatedProyectosProyectoIdRouteRoute
+    }
+    '/_authenticated/proyectos/$proyectoId/ubicacion': {
+      id: '/_authenticated/proyectos/$proyectoId/ubicacion'
+      path: '/ubicacion'
+      fullPath: '/proyectos/$proyectoId/ubicacion'
+      preLoaderRoute: typeof AuthenticatedProyectosProyectoIdUbicacionRouteImport
+      parentRoute: typeof AuthenticatedProyectosProyectoIdRouteRoute
+    }
+    '/_authenticated/proyectos/$proyectoId/resumen': {
+      id: '/_authenticated/proyectos/$proyectoId/resumen'
+      path: '/resumen'
+      fullPath: '/proyectos/$proyectoId/resumen'
+      preLoaderRoute: typeof AuthenticatedProyectosProyectoIdResumenRouteImport
+      parentRoute: typeof AuthenticatedProyectosProyectoIdRouteRoute
+    }
+    '/_authenticated/proyectos/$proyectoId/presupuesto': {
+      id: '/_authenticated/proyectos/$proyectoId/presupuesto'
+      path: '/presupuesto'
+      fullPath: '/proyectos/$proyectoId/presupuesto'
+      preLoaderRoute: typeof AuthenticatedProyectosProyectoIdPresupuestoRouteImport
+      parentRoute: typeof AuthenticatedProyectosProyectoIdRouteRoute
+    }
+    '/_authenticated/proyectos/$proyectoId/fotos': {
+      id: '/_authenticated/proyectos/$proyectoId/fotos'
+      path: '/fotos'
+      fullPath: '/proyectos/$proyectoId/fotos'
+      preLoaderRoute: typeof AuthenticatedProyectosProyectoIdFotosRouteImport
+      parentRoute: typeof AuthenticatedProyectosProyectoIdRouteRoute
+    }
+    '/_authenticated/proyectos/$proyectoId/facturacion': {
+      id: '/_authenticated/proyectos/$proyectoId/facturacion'
+      path: '/facturacion'
+      fullPath: '/proyectos/$proyectoId/facturacion'
+      preLoaderRoute: typeof AuthenticatedProyectosProyectoIdFacturacionRouteImport
+      parentRoute: typeof AuthenticatedProyectosProyectoIdRouteRoute
+    }
+    '/_authenticated/proyectos/$proyectoId/detalles': {
+      id: '/_authenticated/proyectos/$proyectoId/detalles'
+      path: '/detalles'
+      fullPath: '/proyectos/$proyectoId/detalles'
+      preLoaderRoute: typeof AuthenticatedProyectosProyectoIdDetallesRouteImport
+      parentRoute: typeof AuthenticatedProyectosProyectoIdRouteRoute
+    }
+    '/_authenticated/proyectos/$proyectoId/admin': {
+      id: '/_authenticated/proyectos/$proyectoId/admin'
+      path: '/admin'
+      fullPath: '/proyectos/$proyectoId/admin'
+      preLoaderRoute: typeof AuthenticatedProyectosProyectoIdAdminRouteImport
+      parentRoute: typeof AuthenticatedProyectosProyectoIdRouteRoute
+    }
   }
 }
 
+interface AuthenticatedProyectosProyectoIdRouteRouteChildren {
+  AuthenticatedProyectosProyectoIdAdminRoute: typeof AuthenticatedProyectosProyectoIdAdminRoute
+  AuthenticatedProyectosProyectoIdDetallesRoute: typeof AuthenticatedProyectosProyectoIdDetallesRoute
+  AuthenticatedProyectosProyectoIdFacturacionRoute: typeof AuthenticatedProyectosProyectoIdFacturacionRoute
+  AuthenticatedProyectosProyectoIdFotosRoute: typeof AuthenticatedProyectosProyectoIdFotosRoute
+  AuthenticatedProyectosProyectoIdPresupuestoRoute: typeof AuthenticatedProyectosProyectoIdPresupuestoRoute
+  AuthenticatedProyectosProyectoIdResumenRoute: typeof AuthenticatedProyectosProyectoIdResumenRoute
+  AuthenticatedProyectosProyectoIdUbicacionRoute: typeof AuthenticatedProyectosProyectoIdUbicacionRoute
+  AuthenticatedProyectosProyectoIdIndexRoute: typeof AuthenticatedProyectosProyectoIdIndexRoute
+}
+
+const AuthenticatedProyectosProyectoIdRouteRouteChildren: AuthenticatedProyectosProyectoIdRouteRouteChildren =
+  {
+    AuthenticatedProyectosProyectoIdAdminRoute:
+      AuthenticatedProyectosProyectoIdAdminRoute,
+    AuthenticatedProyectosProyectoIdDetallesRoute:
+      AuthenticatedProyectosProyectoIdDetallesRoute,
+    AuthenticatedProyectosProyectoIdFacturacionRoute:
+      AuthenticatedProyectosProyectoIdFacturacionRoute,
+    AuthenticatedProyectosProyectoIdFotosRoute:
+      AuthenticatedProyectosProyectoIdFotosRoute,
+    AuthenticatedProyectosProyectoIdPresupuestoRoute:
+      AuthenticatedProyectosProyectoIdPresupuestoRoute,
+    AuthenticatedProyectosProyectoIdResumenRoute:
+      AuthenticatedProyectosProyectoIdResumenRoute,
+    AuthenticatedProyectosProyectoIdUbicacionRoute:
+      AuthenticatedProyectosProyectoIdUbicacionRoute,
+    AuthenticatedProyectosProyectoIdIndexRoute:
+      AuthenticatedProyectosProyectoIdIndexRoute,
+  }
+
+const AuthenticatedProyectosProyectoIdRouteRouteWithChildren =
+  AuthenticatedProyectosProyectoIdRouteRoute._addFileChildren(
+    AuthenticatedProyectosProyectoIdRouteRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedProyectosProyectoIdRouteRoute: typeof AuthenticatedProyectosProyectoIdRouteRouteWithChildren
   AuthenticatedClientesClienteIdRoute: typeof AuthenticatedClientesClienteIdRoute
   AuthenticatedClientesNuevoRoute: typeof AuthenticatedClientesNuevoRoute
-  AuthenticatedProyectosProyectoIdRoute: typeof AuthenticatedProyectosProyectoIdRoute
   AuthenticatedProyectosNuevoRoute: typeof AuthenticatedProyectosNuevoRoute
   AuthenticatedClientesIndexRoute: typeof AuthenticatedClientesIndexRoute
   AuthenticatedOficinasIndexRoute: typeof AuthenticatedOficinasIndexRoute
@@ -302,9 +496,10 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedProyectosProyectoIdRouteRoute:
+    AuthenticatedProyectosProyectoIdRouteRouteWithChildren,
   AuthenticatedClientesClienteIdRoute: AuthenticatedClientesClienteIdRoute,
   AuthenticatedClientesNuevoRoute: AuthenticatedClientesNuevoRoute,
-  AuthenticatedProyectosProyectoIdRoute: AuthenticatedProyectosProyectoIdRoute,
   AuthenticatedProyectosNuevoRoute: AuthenticatedProyectosNuevoRoute,
   AuthenticatedClientesIndexRoute: AuthenticatedClientesIndexRoute,
   AuthenticatedOficinasIndexRoute: AuthenticatedOficinasIndexRoute,
