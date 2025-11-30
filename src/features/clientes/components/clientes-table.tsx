@@ -22,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
+import { DataTablePagination, DataTableToolbar, DataTableLoadingProgress } from '@/components/data-table'
 import { type Cliente } from '../data/schema'
 import { clientesColumns as columns } from './clientes-columns'
 
@@ -30,9 +30,10 @@ const route = getRouteApi('/_authenticated/clientes/')
 
 type DataTableProps = {
   data: Cliente[]
+  isLoading?: boolean
 }
 
-export function ClientesTable({ data }: DataTableProps) {
+export function ClientesTable({ data, isLoading }: DataTableProps) {
   // Local UI-only states
   const [rowSelection, setRowSelection] = useState({})
   const [sorting, setSorting] = useState<SortingState>([])
@@ -139,6 +140,10 @@ export function ClientesTable({ data }: DataTableProps) {
                 })}
               </TableRow>
             ))}
+            <DataTableLoadingProgress
+              isLoading={isLoading}
+              colSpan={columns.length}
+            />
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (

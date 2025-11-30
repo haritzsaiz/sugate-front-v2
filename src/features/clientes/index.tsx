@@ -12,19 +12,21 @@ import { ClientesTable } from './components/clientes-table'
 
 export function Clientes() {
   const [clientes, setClientes] = useState<Client[]>([])
-  const [loading, setLoading] = useState(true)
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
+  const [isFetching, setIsFetching] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetchClientes = async () => {
     try {
-      setLoading(true)
+      setIsFetching(true)
       setError(null)
       const data = await getAllClients()
       setClientes(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cargar clientes')
     } finally {
-      setLoading(false)
+      setIsFetching(false)
+      setIsInitialLoad(false)
     }
   }
 
@@ -52,7 +54,7 @@ export function Clientes() {
           </div>
           <ClientesPrimaryButtons />
         </div>
-        {loading ? (
+        {isInitialLoad ? (
           <div className='flex flex-1 items-center justify-center'>
             <p className='text-muted-foreground'>Cargando clientes...</p>
           </div>
@@ -61,7 +63,7 @@ export function Clientes() {
             <p className='text-destructive'>{error}</p>
           </div>
         ) : (
-          <ClientesTable data={clientes} />
+          <ClientesTable data={clientes} isLoading={isFetching} />
         )}
       </Main>
 

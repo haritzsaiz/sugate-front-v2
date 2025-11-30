@@ -13,12 +13,13 @@ import { ProyectosPrimaryButtons } from './components/proyectos-primary-buttons'
 
 export function Proyectos() {
   const [proyectos, setProyectos] = useState<Proyecto[]>([])
-  const [loading, setLoading] = useState(true)
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
+  const [isFetching, setIsFetching] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetchData = async () => {
     try {
-      setLoading(true)
+      setIsFetching(true)
       setError(null)
       const [projectsData, clientsData, oficinasData] = await Promise.all([
         getAllProjects(),
@@ -44,7 +45,8 @@ export function Proyectos() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cargar proyectos')
     } finally {
-      setLoading(false)
+      setIsFetching(false)
+      setIsInitialLoad(false)
     }
   }
 
@@ -74,7 +76,7 @@ export function Proyectos() {
           <ProyectosPrimaryButtons onRefresh={fetchData} />
         </div>
 
-        {loading ? (
+        {isInitialLoad ? (
           <div className='flex flex-1 items-center justify-center'>
             <p className='text-muted-foreground'>Cargando proyectos...</p>
           </div>
@@ -83,7 +85,7 @@ export function Proyectos() {
             <p className='text-destructive'>{error}</p>
           </div>
         ) : (
-          <ProyectosTable data={proyectos} />
+          <ProyectosTable data={proyectos} isLoading={isFetching} />
         )}
       </Main>
     </>

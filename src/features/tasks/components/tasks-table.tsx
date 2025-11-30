@@ -22,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
+import { DataTablePagination, DataTableToolbar, DataTableLoadingProgress } from '@/components/data-table'
 import { priorities, statuses } from '../data/data'
 import { type Task } from '../data/schema'
 import { DataTableBulkActions } from './data-table-bulk-actions'
@@ -32,9 +32,10 @@ const route = getRouteApi('/_authenticated/tasks/')
 
 type DataTableProps = {
   data: Task[]
+  isLoading?: boolean
 }
 
-export function TasksTable({ data }: DataTableProps) {
+export function TasksTable({ data, isLoading }: DataTableProps) {
   // Local UI-only states
   const [rowSelection, setRowSelection] = useState({})
   const [sorting, setSorting] = useState<SortingState>([])
@@ -127,7 +128,8 @@ export function TasksTable({ data }: DataTableProps) {
           },
         ]}
       />
-      <div className='overflow-hidden rounded-md border'>
+      <div className='relative overflow-hidden rounded-md border'>
+        <DataTableLoadingProgress isLoading={isLoading} />
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

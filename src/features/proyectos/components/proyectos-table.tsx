@@ -22,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTablePagination } from '@/components/data-table'
+import { DataTablePagination, DataTableLoadingProgress } from '@/components/data-table'
 import { type Proyecto } from '../data/schema'
 import { proyectosColumns as columns } from './proyectos-columns'
 import { ProyectosToolbar } from './proyectos-toolbar'
@@ -31,9 +31,10 @@ const route = getRouteApi('/_authenticated/proyectos/')
 
 type DataTableProps = {
   data: Proyecto[]
+  isLoading?: boolean
 }
 
-export function ProyectosTable({ data }: DataTableProps) {
+export function ProyectosTable({ data, isLoading }: DataTableProps) {
   // Local UI-only states
   const [rowSelection, setRowSelection] = useState({})
   const [sorting, setSorting] = useState<SortingState>([])
@@ -126,6 +127,10 @@ export function ProyectosTable({ data }: DataTableProps) {
                 ))}
               </TableRow>
             ))}
+            <DataTableLoadingProgress
+              isLoading={isLoading}
+              colSpan={columns.length}
+            />
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
