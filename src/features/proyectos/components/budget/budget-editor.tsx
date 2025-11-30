@@ -401,7 +401,7 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails }: BudgetEdi
             value={isNewBudget ? 'new' : (selectedBudgetId || '')}
             onValueChange={handleBudgetChange}
           >
-            <SelectTrigger className='w-[300px]'>
+            <SelectTrigger className='w-[380px]'>
               <SelectValue placeholder='Selecciona un presupuesto' />
             </SelectTrigger>
             <SelectContent>
@@ -415,7 +415,9 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails }: BudgetEdi
                       {formatCurrency(budget.total_con_iva)} - {formatDate(budget.created_at)}
                     </span>
                     {budget.id === approvedBudgetId && (
-                      <span className='shrink-0 text-xs text-green-600'>Aprobado</span>
+                      <Badge variant='default' className='shrink-0 bg-green-600 text-xs'>
+                        Aprobado
+                      </Badge>
                     )}
                   </div>
                 </SelectItem>
