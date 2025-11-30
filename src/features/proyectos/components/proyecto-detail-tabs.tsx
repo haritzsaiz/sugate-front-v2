@@ -1,7 +1,9 @@
-import { type Project } from '@/lib/types'
+import { type Project, type BudgetSection } from '@/lib/types'
 import { type Client } from '@/lib/client-service'
 import { Input } from '@/components/ui/input'
 import { Calendar, Clock } from 'lucide-react'
+import { BudgetEditor } from './budget'
+import { toast } from 'sonner'
 
 interface ProyectoDetailTabsProps {
   proyecto: Project
@@ -195,13 +197,15 @@ export function ProyectoDetailTabs({ proyecto, cliente, activeTab }: ProyectoDet
 
       {/* Presupuesto Section */}
       {activeTab === 'presupuesto' && (
-        <>
-          <div>
-            <h2 className='text-xl font-bold'>Presupuesto</h2>
-            <p className='text-sm text-muted-foreground'>Información de presupuestos</p>
-          </div>
-          <p className='text-muted-foreground'>No hay presupuestos asociados</p>
-        </>
+        <BudgetEditor
+          project={proyecto}
+          client={cliente}
+          onSaveBudgetDetails={(budgetDetails: BudgetSection[]) => {
+            // TODO: Implement save to backend
+            console.log('Saving budget details:', budgetDetails)
+            toast.success('Presupuesto guardado correctamente')
+          }}
+        />
       )}
 
       {/* Facturación Section */}

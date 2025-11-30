@@ -74,3 +74,19 @@ export interface Oficina {
   created_at: string;
   updated_at: string;
 }
+
+// Budget Types
+export interface BudgetConcept {
+  id: string;
+  referencia: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  cost: number;
+}
+
+export interface BudgetSection {
+  id: string;
+  name: string;
+  concepts: BudgetConcept[];
+}
