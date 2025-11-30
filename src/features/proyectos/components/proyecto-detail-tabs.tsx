@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { DatePicker } from '@/components/date-picker'
+import { OficinaSelector } from '@/components/oficina-selector'
+import { ClienteSelector } from '@/components/cliente-selector'
 import {
   Select,
   SelectContent,
@@ -61,6 +63,7 @@ export function ProyectoDetailTabs({ proyecto, cliente, activeTab, onProjectUpda
     direccion: proyecto.direccion,
     ciudad: proyecto.ciudad,
     oficina: proyecto.oficina || '',
+    id_cliente: proyecto.id_cliente,
   })
   const [isSavingDetalles, setIsSavingDetalles] = useState(false)
 
@@ -112,6 +115,7 @@ export function ProyectoDetailTabs({ proyecto, cliente, activeTab, onProjectUpda
       direccion: proyecto.direccion,
       ciudad: proyecto.ciudad,
       oficina: proyecto.oficina || '',
+      id_cliente: proyecto.id_cliente,
     })
   }, [proyecto])
 
@@ -161,6 +165,7 @@ export function ProyectoDetailTabs({ proyecto, cliente, activeTab, onProjectUpda
         direccion: detallesData.direccion,
         ciudad: detallesData.ciudad,
         oficina: detallesData.oficina || undefined,
+        id_cliente: detallesData.id_cliente,
       })
       toast.success('Detalles actualizados correctamente')
       setIsEditingDetalles(false)
@@ -177,6 +182,7 @@ export function ProyectoDetailTabs({ proyecto, cliente, activeTab, onProjectUpda
       direccion: proyecto.direccion,
       ciudad: proyecto.ciudad,
       oficina: proyecto.oficina || '',
+      id_cliente: proyecto.id_cliente,
     })
     setIsEditingDetalles(false)
   }
@@ -498,10 +504,10 @@ export function ProyectoDetailTabs({ proyecto, cliente, activeTab, onProjectUpda
               <div>
                 <p className='text-sm text-primary mb-2'>Oficina</p>
                 {isEditingDetalles ? (
-                  <Input 
-                    value={detallesData.oficina} 
-                    onChange={(e) => setDetallesData({ ...detallesData, oficina: e.target.value })}
-                    placeholder='Nombre de la oficina'
+                  <OficinaSelector
+                    value={detallesData.oficina}
+                    onValueChange={(value) => setDetallesData({ ...detallesData, oficina: value })}
+                    placeholder='Seleccionar oficina...'
                   />
                 ) : (
                   <div className='flex h-10 items-center'>
@@ -518,7 +524,15 @@ export function ProyectoDetailTabs({ proyecto, cliente, activeTab, onProjectUpda
               </div>
               <div>
                 <p className='text-sm text-primary mb-2'>Cliente</p>
-                <Input value={cliente?.nombre_completo || '-'} readOnly />
+                {isEditingDetalles ? (
+                  <ClienteSelector
+                    value={detallesData.id_cliente}
+                    onValueChange={(value) => setDetallesData({ ...detallesData, id_cliente: value })}
+                    placeholder='Seleccionar cliente...'
+                  />
+                ) : (
+                  <Input value={cliente?.nombre_completo || '-'} readOnly />
+                )}
               </div>
             </div>
           </div>

@@ -1,12 +1,12 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { useNavigate } from '@tanstack/react-router'
 import { z } from 'zod'
-import { MapPin, Save, X, Loader2, Building, Check, ChevronsUpDown, User, Mail, Phone, CreditCard } from 'lucide-react'
+import { MapPin, Save, X, Loader2, Building, User, Mail, Phone, CreditCard } from 'lucide-react'
 import { toast } from 'sonner'
 import { createProject } from '@/lib/project-service'
-import { getAllClients, getClientById, type Client } from '@/lib/client-service'
+import { getClientById, type Client } from '@/lib/client-service'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -17,20 +17,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -38,6 +24,7 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { Search } from '@/components/search'
 import { OficinaSelector } from '@/components/oficina-selector'
+import { ClienteSelector } from '@/components/cliente-selector'
 
 const formSchema = z.object({
   id_cliente: z.string().min(1, 'El cliente es requerido'),
@@ -51,11 +38,7 @@ type ProyectoFormData = z.infer<typeof formSchema>
 export function ProyectoForm() {
   const navigate = useNavigate()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [clientes, setClientes] = useState<Client[]>([])
   const [selectedCliente, setSelectedCliente] = useState<Client | null>(null)
-  const [loadingClientes, setLoadingClientes] = useState(false)
-  const [clienteOpen, setClienteOpen] = useState(false)
-  const [clienteSearch, setClienteSearch] = useState('')
 
   const form = useForm<ProyectoFormData>({
     resolver: zodResolver(formSchema),
@@ -66,51 +49,6 @@ export function ProyectoForm() {
       oficina: '',
     },
   })
-
-  // Debounced search for clients via API - searches multiple fields in parallel
-  const searchClientes = useCallback(async (searchTerm: string) => {
-    if (!searchTerm.trim()) {
-      setClientes([])
-      return
-    }
-    
-    setLoadingClientes(true)
-    try {
-      // Search across multiple fields in parallel
-      const searchFields = ['nombre_completo', 'dni', 'email', 'telefono']
-      const searchPromises = searchFields.map((field) =>
-        getAllClients({ 
-          field, 
-          value: searchTerm, 
-          operand: 'contains' 
-        }).catch(() => [] as Client[]) // Return empty array on error for individual field
-      )
-      
-      const results = await Promise.all(searchPromises)
-      
-      // Flatten results and remove duplicates by _id
-      const allClients = results.flat()
-      const uniqueClients = Array.from(
-        new Map(allClients.map((client) => [client._id, client])).values()
-      )
-      
-      setClientes(uniqueClients)
-    } catch (error) {
-      console.error('Error searching clients:', error)
-      setClientes([])
-    } finally {
-      setLoadingClientes(false)
-    }
-  }, [])
-
-  // Debounce the search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      searchClientes(clienteSearch)
-    }, 300)
-    
-    return () => clearTimeout(timer)
-  }, [clienteSearch, searchClientes])
 
   // Load selected client data if needed (for edit mode or when form has initial value)
   useEffect(() => {
@@ -123,11 +61,6 @@ export function ProyectoForm() {
       })
     }
   }, [form, selectedCliente])
-
-  // Get selected client display name
-  const getSelectedClientName = () => {
-    return selectedCliente?.nombre_completo || ''
-  }
 
   const onSubmit = async (data: ProyectoFormData) => {
     try {
@@ -213,82 +146,16 @@ export function ProyectoForm() {
                       <FormLabel>
                         Cliente <span className='text-destructive'>*</span>
                       </FormLabel>
-                      <Popover open={clienteOpen} onOpenChange={setClienteOpen}>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant='outline'
-                              role='combobox'
-                              aria-expanded={clienteOpen}
-                              className={cn(
-                                'w-full justify-between font-normal',
-                                !field.value && 'text-muted-foreground'
-                              )}
-                            >
-                              {field.value
-                                ? getSelectedClientName()
-                                : 'Buscar cliente por nombre...'}
-                              <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className='w-[400px] p-0' align='start'>
-                          <Command shouldFilter={false}>
-                            <CommandInput
-                              placeholder='Buscar por nombre, apellido, email, tlf, DNI...'
-                              value={clienteSearch}
-                              onValueChange={setClienteSearch}
-                            />
-                            <CommandList>
-                              {loadingClientes && (
-                                <div className='flex items-center justify-center py-6'>
-                                  <Loader2 className='h-4 w-4 animate-spin' />
-                                  <span className='ml-2 text-sm text-muted-foreground'>Buscando...</span>
-                                </div>
-                              )}
-                              {!loadingClientes && clienteSearch.trim() && clientes.length === 0 && (
-                                <CommandEmpty>No se encontraron clientes.</CommandEmpty>
-                              )}
-                              {!loadingClientes && !clienteSearch.trim() && (
-                                <div className='py-6 text-center text-sm text-muted-foreground'>
-                                  Escribe para buscar clientes...
-                                </div>
-                              )}
-                              {!loadingClientes && clientes.length > 0 && (
-                                <CommandGroup>
-                                  {clientes.map((cliente) => (
-                                    <CommandItem
-                                      key={cliente._id}
-                                      value={cliente._id}
-                                      onSelect={() => {
-                                        field.onChange(cliente._id)
-                                        setSelectedCliente(cliente)
-                                        setClienteOpen(false)
-                                        setClienteSearch('')
-                                      }}
-                                    >
-                                      <Check
-                                        className={cn(
-                                          'mr-2 h-4 w-4',
-                                          field.value === cliente._id ? 'opacity-100' : 'opacity-0'
-                                        )}
-                                      />
-                                      <div className='flex flex-col'>
-                                        <span className='font-medium'>{cliente.nombre_completo}</span>
-                                        <span className='text-xs text-muted-foreground'>
-                                          {[cliente.email, cliente.telefono, cliente.dni]
-                                            .filter(Boolean)
-                                            .join(' • ')}
-                                        </span>
-                                      </div>
-                                    </CommandItem>
-                                  ))}
-                                </CommandGroup>
-                              )}
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
+                      <FormControl>
+                        <ClienteSelector
+                          value={field.value}
+                          onValueChange={(value, cliente) => {
+                            field.onChange(value)
+                            setSelectedCliente(cliente)
+                          }}
+                          placeholder='Buscar cliente por nombre...'
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
