@@ -1,11 +1,11 @@
-import { type BudgetData, type Billing } from '@/lib/types'
-import { getBillingByProjectId, createBilling, updateBilling } from '@/lib/billing-service'
+import { type BudgetData } from '@/lib/types'
+import { updateProject } from '@/lib/project-service'
 import { BudgetEditor } from '@/features/proyectos/components/budget'
 import { useProyectoDetailContext } from '@/features/proyectos/hooks/use-proyecto-detail-context'
 import { toast } from 'sonner'
 
 export function PresupuestoTab() {
-  const { proyecto, cliente } = useProyectoDetailContext()
+  const { proyecto, cliente, onProjectUpdate } = useProyectoDetailContext()
 
   return (
     <BudgetEditor
@@ -13,29 +13,14 @@ export function PresupuestoTab() {
       client={cliente}
       onSaveBudgetDetails={async (budgetData: BudgetData) => {
         try {
-          // Check if billing already exists for this project
-          const existingBilling = await getBillingByProjectId(proyecto.id)
+          // Add the new budget to the project's presupuestos array
+          const newPresupuestos = [...(proyecto.presupuestos || []), budgetData]
+          const updatedProject = { ...proyecto, presupuestos: newPresupuestos }
           
-          if (existingBilling) {
-            // Update existing billing
-            const updatedBilling: Billing = {
-              ...existingBilling,
-              presupuesto: budgetData,
-              updated_at: new Date().toISOString(),
-            }
-            await updateBilling(updatedBilling)
-            console.log('Updated billing:', updatedBilling)
-          } else {
-            // Create new billing
-            const newBilling = {
-              id_proyecto: proyecto.id,
-              presupuesto: budgetData,
-              hitos_facturacion: [],
-            }
-            const created = await createBilling(newBilling)
-            console.log('Created billing:', created)
-          }
+          const savedProject = await updateProject(updatedProject)
+          onProjectUpdate(savedProject)
           
+          console.log('Budget saved to project:', savedProject)
           toast.success('Presupuesto guardado correctamente')
         } catch (error) {
           console.error('Error saving budget:', error)

@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { type Project, type BudgetData, type Oficina, type ProjectStatus, type Billing } from '@/lib/types'
+import { type Project, type BudgetData, type Oficina, type ProjectStatus } from '@/lib/types'
 import { type Client } from '@/lib/client-service'
 import { getAllOficinas } from '@/lib/oficina-service'
 import { updateProject } from '@/lib/project-service'
-import { getBillingByProjectId, createBilling, updateBilling } from '@/lib/billing-service'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/date-picker'
@@ -574,29 +573,14 @@ export function ProyectoDetailTabs({ proyecto, cliente, activeTab, onProjectUpda
           client={cliente}
           onSaveBudgetDetails={async (budgetData: BudgetData) => {
             try {
-              // Check if billing already exists for this project
-              const existingBilling = await getBillingByProjectId(proyecto.id)
+              // Add the new budget to the project's presupuestos array
+              const newPresupuestos = [...(proyecto.presupuestos || []), budgetData]
+              const updatedProject = { ...proyecto, presupuestos: newPresupuestos }
               
-              if (existingBilling) {
-                // Update existing billing
-                const updatedBilling: Billing = {
-                  ...existingBilling,
-                  presupuesto: budgetData,
-                  updated_at: new Date().toISOString(),
-                }
-                await updateBilling(updatedBilling)
-                console.log('Updated billing:', updatedBilling)
-              } else {
-                // Create new billing
-                const newBilling = {
-                  id_proyecto: proyecto.id,
-                  presupuesto: budgetData,
-                  hitos_facturacion: [],
-                }
-                const created = await createBilling(newBilling)
-                console.log('Created billing:', created)
-              }
+              const savedProject = await updateProject(updatedProject)
+              onProjectUpdate?.(savedProject)
               
+              console.log('Budget saved to project:', savedProject)
               toast.success('Presupuesto guardado correctamente')
             } catch (error) {
               console.error('Error saving budget:', error)
