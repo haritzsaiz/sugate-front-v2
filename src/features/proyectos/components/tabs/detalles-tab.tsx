@@ -1,12 +1,15 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { useBlocker } from '@tanstack/react-router'
 import { type Oficina } from '@/lib/types'
 import { getAllOficinas } from '@/lib/oficina-service'
 import { updateProject } from '@/lib/project-service'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import { OficinaSelector } from '@/components/oficina-selector'
 import { ClienteSelector } from '@/components/cliente-selector'
-import { Pencil, Save, X, Loader2 } from 'lucide-react'
+import { Pencil, Save, X, Loader2, Info, Calendar, RefreshCw } from 'lucide-react'
 import { OficinaBadge } from '@/features/proyectos/components/oficina-badge'
 import { useProyectoDetailContext } from '@/features/proyectos/hooks/use-proyecto-detail-context'
 import { toast } from 'sonner'
@@ -23,9 +26,41 @@ export function DetallesTab() {
     id_cliente: proyecto.id_cliente,
   })
   const [isSaving, setIsSaving] = useState(false)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+
+  // Store initial data to compare for changes
+  const initialDataRef = useRef<string | null>(null)
 
   // Oficinas data for the badge
   const [oficinas, setOficinas] = useState<Oficina[]>([])
+
+  // Block navigation when there are unsaved changes
+  const { proceed, reset, status } = useBlocker({
+    shouldBlockFn: () => hasUnsavedChanges,
+    withResolver: true,
+  })
+
+  // Browser beforeunload event for closing tab/window
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault()
+        e.returnValue = ''
+        return ''
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [hasUnsavedChanges])
+
+  // Track changes by comparing current state to initial state
+  useEffect(() => {
+    if (initialDataRef.current !== null) {
+      const currentData = JSON.stringify(detallesData)
+      setHasUnsavedChanges(currentData !== initialDataRef.current)
+    }
+  }, [detallesData])
 
   // Fetch oficinas to get colors
   useEffect(() => {
@@ -51,12 +86,16 @@ export function DetallesTab() {
 
   // Reset form data when proyecto changes
   useEffect(() => {
-    setDetallesData({
+    const newData = {
       direccion: proyecto.direccion,
       ciudad: proyecto.ciudad,
       oficina: proyecto.oficina || '',
       id_cliente: proyecto.id_cliente,
-    })
+    }
+    setDetallesData(newData)
+    // Store initial state for change detection
+    initialDataRef.current = JSON.stringify(newData)
+    setHasUnsavedChanges(false)
   }, [proyecto])
 
   const handleSave = async () => {
@@ -71,6 +110,9 @@ export function DetallesTab() {
       })
       toast.success('Detalles actualizados correctamente')
       setIsEditing(false)
+      // Update initial state to match saved state
+      initialDataRef.current = JSON.stringify(detallesData)
+      setHasUnsavedChanges(false)
       onProjectUpdate?.(updatedProject)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Error al guardar los cambios')
@@ -80,13 +122,27 @@ export function DetallesTab() {
   }
 
   const handleCancel = () => {
-    setDetallesData({
+    const originalData = {
       direccion: proyecto.direccion,
       ciudad: proyecto.ciudad,
       oficina: proyecto.oficina || '',
       id_cliente: proyecto.id_cliente,
-    })
+    }
+    setDetallesData(originalData)
+    initialDataRef.current = JSON.stringify(originalData)
+    setHasUnsavedChanges(false)
     setIsEditing(false)
+  }
+
+  // Format date helper
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
   }
 
   return (
@@ -95,6 +151,16 @@ export function DetallesTab() {
         <div>
           <h2 className='text-xl font-bold'>Detalles del Proyecto</h2>
           <p className='text-sm text-muted-foreground'>Información general del proyecto</p>
+          <div className='mt-2 flex flex-wrap gap-4 text-xs text-muted-foreground'>
+            <div className='flex items-center gap-1'>
+              <Calendar className='h-3 w-3' />
+              <span>Creado: {formatDateTime(proyecto.created_at)}</span>
+            </div>
+            <div className='flex items-center gap-1'>
+              <RefreshCw className='h-3 w-3' />
+              <span>Actualizado: {formatDateTime(proyecto.updated_at)}</span>
+            </div>
+          </div>
         </div>
         {!isEditing ? (
           <Button
@@ -107,7 +173,12 @@ export function DetallesTab() {
             Editar
           </Button>
         ) : (
-          <div className='flex gap-2'>
+          <div className='flex items-center gap-2'>
+            {hasUnsavedChanges && (
+              <span className='text-sm text-amber-600 dark:text-amber-400'>
+                Cambios sin guardar
+              </span>
+            )}
             <Button
               variant='outline'
               size='sm'
@@ -123,6 +194,7 @@ export function DetallesTab() {
               onClick={handleSave}
               disabled={isSaving}
               className='gap-2'
+              variant={hasUnsavedChanges ? 'default' : 'outline'}
             >
               {isSaving ? (
                 <Loader2 className='h-4 w-4 animate-spin' />
@@ -134,6 +206,18 @@ export function DetallesTab() {
           </div>
         )}
       </div>
+
+      {/* Unsaved Changes Alert */}
+      {hasUnsavedChanges && (
+        <Alert className='border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100'>
+          <Info className='h-4 w-4' />
+          <AlertTitle>Cambios sin guardar</AlertTitle>
+          <AlertDescription>
+            Has realizado cambios en los detalles del proyecto. Recuerda hacer clic en "Guardar" para no perderlos.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className='space-y-4'>
         <div className='grid gap-4 sm:grid-cols-2'>
           <div>
@@ -187,6 +271,18 @@ export function DetallesTab() {
           </div>
         </div>
       </div>
+
+      {/* Unsaved Changes Warning Dialog */}
+      <ConfirmDialog
+        open={status === 'blocked'}
+        onOpenChange={(open) => !open && reset?.()}
+        title='Cambios sin guardar'
+        desc='Tienes cambios sin guardar en los detalles del proyecto. Si sales ahora, perderás todos los cambios realizados.'
+        cancelBtnText='Quedarse'
+        confirmText='Salir sin guardar'
+        destructive
+        handleConfirm={() => proceed?.()}
+      />
     </div>
   )
 }

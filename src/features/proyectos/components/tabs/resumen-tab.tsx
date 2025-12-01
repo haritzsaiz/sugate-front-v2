@@ -1,9 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { useBlocker } from '@tanstack/react-router'
 import { type ProjectStatus } from '@/lib/types'
 import { updateProject } from '@/lib/project-service'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/date-picker'
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import {
   Select,
   SelectContent,
@@ -11,11 +14,33 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Clock, Pencil, Save, X, Loader2, Play, CheckCircle, XCircle, FileText, FileX } from 'lucide-react'
+import { Clock, Pencil, Save, X, Loader2, Play, CheckCircle, XCircle, FileText, FileX, Info } from 'lucide-react'
 import { projectStatusLabels } from '@/features/proyectos/data/schema'
 import { ProyectoStatusBadge } from '@/features/proyectos/components/proyecto-status-badge'
 import { useProyectoDetailContext } from '@/features/proyectos/hooks/use-proyecto-detail-context'
 import { toast } from 'sonner'
+
+// Define which date sections should be visible for each state
+const getVisibleSections = (estado: ProjectStatus) => {
+  switch (estado) {
+    case 'presupuesto':
+    case 'presupuesto_abandonado':
+      // Only show prevision for budget states
+      return { prevision: true, planificacion: false, ejecucion: false }
+    case 'planificacion':
+      // Show prevision and planificacion
+      return { prevision: true, planificacion: true, ejecucion: false }
+    case 'en_ejecucion':
+      // Show all sections, but ejecucion.fecha_fin is optional
+      return { prevision: true, planificacion: true, ejecucion: true, ejecucionFechaFin: false }
+    case 'finalizado':
+    case 'cancelado':
+      // Show all sections including fecha_fin
+      return { prevision: true, planificacion: true, ejecucion: true, ejecucionFechaFin: true }
+    default:
+      return { prevision: true, planificacion: false, ejecucion: false }
+  }
+}
 
 export function ResumenTab() {
   const { proyecto, onProjectUpdate } = useProyectoDetailContext()
@@ -47,10 +72,45 @@ export function ResumenTab() {
     },
   })
   const [isSaving, setIsSaving] = useState(false)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+
+  // Store initial data to compare for changes
+  const initialDataRef = useRef<string | null>(null)
+
+  // Determine which sections to show based on current state
+  const visibleSections = useMemo(() => getVisibleSections(resumenData.estado), [resumenData.estado])
+
+  // Block navigation when there are unsaved changes
+  const { proceed, reset, status } = useBlocker({
+    shouldBlockFn: () => hasUnsavedChanges,
+    withResolver: true,
+  })
+
+  // Browser beforeunload event for closing tab/window
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault()
+        e.returnValue = ''
+        return ''
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [hasUnsavedChanges])
+
+  // Track changes by comparing current state to initial state
+  useEffect(() => {
+    if (initialDataRef.current !== null) {
+      const currentData = JSON.stringify(resumenData)
+      setHasUnsavedChanges(currentData !== initialDataRef.current)
+    }
+  }, [resumenData])
 
   // Reset form data when proyecto changes
   useEffect(() => {
-    setResumenData({
+    const newData = {
       estado: proyecto.estado as ProjectStatus,
       prevision: {
         fecha_inicio: proyecto.prevision.fecha_inicio,
@@ -63,7 +123,11 @@ export function ResumenTab() {
         fecha_inicio: proyecto.ejecucion.fecha_inicio,
         fecha_fin: proyecto.ejecucion.fecha_fin,
       },
-    })
+    }
+    setResumenData(newData)
+    // Store initial state for change detection
+    initialDataRef.current = JSON.stringify(newData)
+    setHasUnsavedChanges(false)
   }, [proyecto])
 
   const handleSave = async () => {
@@ -78,6 +142,9 @@ export function ResumenTab() {
       })
       toast.success('Resumen actualizado correctamente')
       setIsEditing(false)
+      // Update initial state to match saved state
+      initialDataRef.current = JSON.stringify(resumenData)
+      setHasUnsavedChanges(false)
       onProjectUpdate?.(updatedProject)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Error al guardar los cambios')
@@ -87,7 +154,7 @@ export function ResumenTab() {
   }
 
   const handleCancel = () => {
-    setResumenData({
+    const originalData = {
       estado: proyecto.estado as ProjectStatus,
       prevision: {
         fecha_inicio: proyecto.prevision.fecha_inicio,
@@ -100,7 +167,10 @@ export function ResumenTab() {
         fecha_inicio: proyecto.ejecucion.fecha_inicio,
         fecha_fin: proyecto.ejecucion.fecha_fin,
       },
-    })
+    }
+    setResumenData(originalData)
+    initialDataRef.current = JSON.stringify(originalData)
+    setHasUnsavedChanges(false)
     setIsEditing(false)
   }
 
@@ -169,7 +239,12 @@ export function ResumenTab() {
             Editar
           </Button>
         ) : (
-          <div className='flex gap-2'>
+          <div className='flex items-center gap-2'>
+            {hasUnsavedChanges && (
+              <span className='text-sm text-amber-600 dark:text-amber-400'>
+                Cambios sin guardar
+              </span>
+            )}
             <Button
               variant='outline'
               size='sm'
@@ -185,6 +260,7 @@ export function ResumenTab() {
               onClick={handleSave}
               disabled={isSaving}
               className='gap-2'
+              variant={hasUnsavedChanges ? 'default' : 'outline'}
             >
               {isSaving ? (
                 <Loader2 className='h-4 w-4 animate-spin' />
@@ -196,6 +272,17 @@ export function ResumenTab() {
           </div>
         )}
       </div>
+
+      {/* Unsaved Changes Alert */}
+      {hasUnsavedChanges && (
+        <Alert className='border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100'>
+          <Info className='h-4 w-4' />
+          <AlertTitle>Cambios sin guardar</AlertTitle>
+          <AlertDescription>
+            Has realizado cambios en el resumen del proyecto. Recuerda hacer clic en "Guardar" para no perderlos.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Status Section */}
       <div className='max-w-md'>
@@ -227,7 +314,7 @@ export function ResumenTab() {
         )}
       </div>
 
-      {/* Previsión Section */}
+      {/* Previsión Section - Always visible */}
       <div className='pt-4'>
         <h2 className='text-lg font-semibold'>Previsión</h2>
       </div>
@@ -267,82 +354,109 @@ export function ResumenTab() {
         </div>
       </div>
 
-      {/* Planificación Section */}
-      <div className='pt-4'>
-        <h2 className='text-lg font-semibold'>Planificación</h2>
-      </div>
-      <div className='max-w-md'>
-        <p className='text-sm mb-2'>Fecha Inicio Planificada</p>
-        {isEditing ? (
-          <DatePicker
-            selected={parseDate(resumenData.planificacion.fecha_inicio)}
-            onSelect={(date) => setResumenData({
-              ...resumenData,
-              planificacion: { fecha_inicio: toISOString(date) }
-            })}
-            placeholder='Seleccionar fecha'
-          />
-        ) : (
-          <div className='flex h-10 items-center rounded-md border border-input bg-background px-3 text-sm'>
-            {formatDate(resumenData.planificacion.fecha_inicio)}
+      {/* Planificación Section - Visible from planificacion state onwards */}
+      {visibleSections.planificacion && (
+        <>
+          <div className='pt-4'>
+            <h2 className='text-lg font-semibold'>Planificación</h2>
           </div>
-        )}
-        <div className='mt-1 flex items-center gap-1 text-xs text-muted-foreground'>
-          <Clock className='h-3 w-3' />
-          <span>{getRelativeTime(resumenData.planificacion.fecha_inicio)}</span>
-        </div>
-      </div>
+          <div className='max-w-md'>
+            <p className='text-sm mb-2'>Fecha Inicio Planificada</p>
+            {isEditing ? (
+              <DatePicker
+                selected={parseDate(resumenData.planificacion.fecha_inicio)}
+                onSelect={(date) => setResumenData({
+                  ...resumenData,
+                  planificacion: { fecha_inicio: toISOString(date) }
+                })}
+                placeholder='Seleccionar fecha'
+              />
+            ) : (
+              <div className='flex h-10 items-center rounded-md border border-input bg-background px-3 text-sm'>
+                {resumenData.planificacion.fecha_inicio ? formatDate(resumenData.planificacion.fecha_inicio) : '-'}
+              </div>
+            )}
+            {resumenData.planificacion.fecha_inicio && (
+              <div className='mt-1 flex items-center gap-1 text-xs text-muted-foreground'>
+                <Clock className='h-3 w-3' />
+                <span>{getRelativeTime(resumenData.planificacion.fecha_inicio)}</span>
+              </div>
+            )}
+          </div>
+        </>
+      )}
 
-      {/* Ejecución Section */}
-      <div className='pt-4'>
-        <h2 className='text-lg font-semibold'>Ejecución</h2>
-      </div>
-      <div className='grid gap-4 sm:grid-cols-2'>
-        <div>
-          <p className='text-sm mb-2'>Fecha Inicio Real</p>
-          {isEditing ? (
-            <DatePicker
-              selected={parseDate(resumenData.ejecucion.fecha_inicio)}
-              onSelect={(date) => setResumenData({
-                ...resumenData,
-                ejecucion: { ...resumenData.ejecucion, fecha_inicio: toISOString(date) }
-              })}
-              placeholder='Seleccionar fecha'
-            />
-          ) : (
-            <div className='flex h-10 items-center rounded-md border border-input bg-background px-3 text-sm'>
-              {formatDate(resumenData.ejecucion.fecha_inicio)}
-            </div>
-          )}
-          <div className='mt-1 flex items-center gap-1 text-xs text-muted-foreground'>
-            <Clock className='h-3 w-3' />
-            <span>{getRelativeTime(resumenData.ejecucion.fecha_inicio)}</span>
+      {/* Ejecución Section - Visible from en_ejecucion state onwards */}
+      {visibleSections.ejecucion && (
+        <>
+          <div className='pt-4'>
+            <h2 className='text-lg font-semibold'>Ejecución</h2>
           </div>
-        </div>
-        <div>
-          <p className='text-sm mb-2'>Fecha Fin Real</p>
-          {isEditing ? (
-            <DatePicker
-              selected={parseDate(resumenData.ejecucion.fecha_fin)}
-              onSelect={(date) => setResumenData({
-                ...resumenData,
-                ejecucion: { ...resumenData.ejecucion, fecha_fin: toISOString(date) }
-              })}
-              placeholder='Seleccionar fecha'
-            />
-          ) : (
-            <div className='flex h-10 items-center rounded-md border border-input bg-background px-3 text-sm'>
-              {resumenData.ejecucion.fecha_fin ? formatDate(resumenData.ejecucion.fecha_fin) : '-'}
+          <div className='grid gap-4 sm:grid-cols-2'>
+            <div>
+              <p className='text-sm mb-2'>Fecha Inicio Real</p>
+              {isEditing ? (
+                <DatePicker
+                  selected={parseDate(resumenData.ejecucion.fecha_inicio)}
+                  onSelect={(date) => setResumenData({
+                    ...resumenData,
+                    ejecucion: { ...resumenData.ejecucion, fecha_inicio: toISOString(date) }
+                  })}
+                  placeholder='Seleccionar fecha'
+                />
+              ) : (
+                <div className='flex h-10 items-center rounded-md border border-input bg-background px-3 text-sm'>
+                  {resumenData.ejecucion.fecha_inicio ? formatDate(resumenData.ejecucion.fecha_inicio) : '-'}
+                </div>
+              )}
+              {resumenData.ejecucion.fecha_inicio && (
+                <div className='mt-1 flex items-center gap-1 text-xs text-muted-foreground'>
+                  <Clock className='h-3 w-3' />
+                  <span>{getRelativeTime(resumenData.ejecucion.fecha_inicio)}</span>
+                </div>
+              )}
             </div>
-          )}
-          {resumenData.ejecucion.fecha_fin && (
-            <div className='mt-1 flex items-center gap-1 text-xs text-muted-foreground'>
-              <Clock className='h-3 w-3' />
-              <span>{getRelativeTime(resumenData.ejecucion.fecha_fin)}</span>
-            </div>
-          )}
-        </div>
-      </div>
+            {/* Fecha Fin - Only visible for finalizado/cancelado states */}
+            {visibleSections.ejecucionFechaFin && (
+              <div>
+                <p className='text-sm mb-2'>Fecha Fin Real</p>
+                {isEditing ? (
+                  <DatePicker
+                    selected={parseDate(resumenData.ejecucion.fecha_fin)}
+                    onSelect={(date) => setResumenData({
+                      ...resumenData,
+                      ejecucion: { ...resumenData.ejecucion, fecha_fin: toISOString(date) }
+                    })}
+                    placeholder='Seleccionar fecha'
+                  />
+                ) : (
+                  <div className='flex h-10 items-center rounded-md border border-input bg-background px-3 text-sm'>
+                    {resumenData.ejecucion.fecha_fin ? formatDate(resumenData.ejecucion.fecha_fin) : '-'}
+                  </div>
+                )}
+                {resumenData.ejecucion.fecha_fin && (
+                  <div className='mt-1 flex items-center gap-1 text-xs text-muted-foreground'>
+                    <Clock className='h-3 w-3' />
+                    <span>{getRelativeTime(resumenData.ejecucion.fecha_fin)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Unsaved Changes Warning Dialog */}
+      <ConfirmDialog
+        open={status === 'blocked'}
+        onOpenChange={(open) => !open && reset?.()}
+        title='Cambios sin guardar'
+        desc='Tienes cambios sin guardar en el resumen del proyecto. Si sales ahora, perderás todos los cambios realizados.'
+        cancelBtnText='Quedarse'
+        confirmText='Salir sin guardar'
+        destructive
+        handleConfirm={() => proceed?.()}
+      />
     </div>
   )
 }
