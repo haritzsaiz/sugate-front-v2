@@ -80,7 +80,7 @@ export function BudgetPreview({
           <thead>
             <tr style="border-bottom: 1px solid #e5e5e5;">
               <th style="padding: 8px 12px; text-align: left; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Nº</th>
-              <th style="padding: 8px 12px; text-align: left; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Título</th>
+              <th style="padding: 8px 12px; text-align: left; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Concepto</th>
               <th style="padding: 8px 12px; text-align: right; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Precio</th>
             </tr>
           </thead>
@@ -297,7 +297,7 @@ export function BudgetPreview({
                   <thead>
                     <tr className='border-b text-xs uppercase text-muted-foreground'>
                       <th className='py-2 text-left font-medium'>Nº</th>
-                      <th className='py-2 text-left font-medium'>Título</th>
+                      <th className='py-2 text-left font-medium'>Concepto</th>
                       <th className='py-2 text-right font-medium'>Precio</th>
                     </tr>
                   </thead>

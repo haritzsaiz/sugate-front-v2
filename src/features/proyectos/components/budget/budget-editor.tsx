@@ -5,6 +5,7 @@ import { getBillingByProjectId } from '@/lib/billing-service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import {
@@ -678,7 +679,7 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
                       <TableHeader>
                         <TableRow className='hover:bg-transparent'>
                           <TableHead className='w-12'></TableHead>
-                          <TableHead className='min-w-[200px]'>Título</TableHead>
+                          <TableHead className='min-w-[200px]'>Concepto</TableHead>
                           <TableHead className='w-32 text-right'>Precio</TableHead>
                           {!isReadOnly && <TableHead className='w-12'></TableHead>}
                         </TableRow>
@@ -711,7 +712,7 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
                                         titulo: e.target.value,
                                       })
                                     }
-                                    placeholder='Título del item...'
+                                    placeholder='Concepto...'
                                     className='h-8 border-none bg-transparent shadow-none focus-visible:bg-background focus-visible:ring-1'
                                   />
                                 )}
@@ -720,17 +721,14 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
                                 {isReadOnly ? (
                                   <span className='text-sm font-mono'>{formatCurrency(item.precio)}</span>
                                 ) : (
-                                  <Input
-                                    type='number'
+                                  <CurrencyInput
                                     value={item.precio}
-                                    onChange={(e) =>
+                                    onChange={(value) =>
                                       updateItem(section.id, item.id, {
-                                        precio: parseFloat(e.target.value) || 0,
+                                        precio: value,
                                       })
                                     }
-                                    className='h-8 border-none bg-transparent text-right shadow-none focus-visible:bg-background focus-visible:ring-1'
-                                    min={0}
-                                    step={0.01}
+                                    className='h-8 w-28 border-none bg-transparent shadow-none focus-visible:bg-background focus-visible:ring-1'
                                   />
                                 )}
                               </TableCell>
