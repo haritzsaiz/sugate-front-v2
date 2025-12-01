@@ -83,7 +83,10 @@ export interface Oficina {
 export interface BudgetItem {
   // Mapped from Go's BudgetItem
   titulo: string;
-  precio: number;
+  referencia?: string;
+  precio: number; // Importe base
+  descuento?: number; // Porcentaje de descuento (0-100)
+  iva?: number; // Porcentaje de IVA (0, 4, 10, 21, etc.)
   // UI-only properties
   id: string;
 }

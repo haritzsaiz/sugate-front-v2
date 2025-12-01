@@ -34,7 +34,6 @@ import {
   ChevronRight,
   MoreHorizontal,
   Copy,
-  Percent,
   Eye,
   Loader2,
   CheckCircle,
@@ -77,8 +76,7 @@ const formatCurrency = (value: number) => {
 export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBudget }: BudgetEditorProps) {
   const [sections, setSections] = useState<BudgetSection[]>([])
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
-  const [taxRate, setTaxRate] = useState(21) // iva_aplicado
-  const [discountRate, setDiscountRate] = useState(0)
+  const [taxRate, setTaxRate] = useState(21) // iva_aplicado (default for new items)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [selectedBudgetId, setSelectedBudgetId] = useState<string | null>(null)
@@ -177,29 +175,48 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
 
   // Calculate totals - mapped to Go model fields
   const calculations = useMemo(() => {
-    const total_sin_iva = sections.reduce((total, section) => {
-      return total + section.items.reduce((sectionSum, item) => sectionSum + item.precio, 0)
-    }, 0)
-    const discount = total_sin_iva * (discountRate / 100)
-    const taxableAmount = total_sin_iva - discount
-    const iva_importe = taxableAmount * (taxRate / 100)
-    const total_con_iva = taxableAmount + iva_importe
+    // Calculate per-item totals with discounts (absolute value) and IVA
+    let subtotalBruto = 0
+    let totalDescuentos = 0
+    const ivaByRate: Record<number, number> = {}
+    
+    sections.forEach(section => {
+      section.items.forEach(item => {
+        const itemDescuento = item.descuento || 0 // Descuento es valor absoluto
+        const itemNeto = item.precio - itemDescuento
+        const itemIva = itemNeto * ((item.iva ?? 21) / 100)
+        const ivaRate = item.iva ?? 21
+        
+        subtotalBruto += item.precio
+        totalDescuentos += itemDescuento
+        ivaByRate[ivaRate] = (ivaByRate[ivaRate] || 0) + itemIva
+      })
+    })
+    
+    const subtotalNeto = subtotalBruto - totalDescuentos
+    const totalIva = Object.values(ivaByRate).reduce((sum, val) => sum + val, 0)
+    const total = subtotalNeto + totalIva
     const totalItems = sections.reduce((sum, s) => sum + s.items.length, 0)
 
     return { 
-      total_sin_iva, 
-      discount, 
-      taxableAmount, 
-      iva_importe, 
-      total_con_iva, 
+      subtotalBruto,
+      totalDescuentos,
+      subtotalNeto,
+      ivaByRate,
+      totalIva,
+      total,
       totalItems,
       // Aliases for backward compatibility
-      subtotal: total_sin_iva,
-      tax: iva_importe,
-      total: total_con_iva,
+      total_sin_iva: subtotalNeto, 
+      discount: totalDescuentos, 
+      taxableAmount: subtotalNeto, 
+      iva_importe: totalIva, 
+      total_con_iva: total, 
+      subtotal: subtotalNeto,
+      tax: totalIva,
       totalConcepts: totalItems,
     }
-  }, [sections, taxRate, discountRate])
+  }, [sections])
 
   // Determine if the budget is read-only (existing budgets cannot be edited)
   const isReadOnly = !isNewBudget
@@ -264,6 +281,9 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
       id: generateId(),
       titulo: '',
       precio: 0,
+      referencia: '',
+      descuento: 0,
+      iva: 21,
     }
     const section = sections.find((s) => s.id === sectionId)
     if (section) {
@@ -328,10 +348,10 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
     const budgetData: BudgetData = {
       id: generateId(),
       created_at: new Date().toISOString(),
-      total_sin_iva: calculations.total_sin_iva,
+      total_sin_iva: calculations.subtotalNeto,
       iva_aplicado: taxRate,
-      iva_importe: calculations.iva_importe,
-      total_con_iva: calculations.total_con_iva,
+      iva_importe: calculations.totalIva,
+      total_con_iva: calculations.total,
       secciones: sections.map((section) => ({
         id: section.id,
         titulo: section.titulo,
@@ -339,6 +359,9 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
           id: item.id,
           titulo: item.titulo,
           precio: item.precio,
+          referencia: item.referencia,
+          descuento: item.descuento,
+          iva: item.iva,
         })),
         subtotal: section.subtotal,
       })),
@@ -679,15 +702,19 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
                       <TableHeader>
                         <TableRow className='hover:bg-transparent'>
                           <TableHead className='w-12'></TableHead>
-                          <TableHead className='min-w-[200px]'>Concepto</TableHead>
-                          <TableHead className='w-32 text-right'>Precio</TableHead>
+                          <TableHead className='min-w-[150px]'>Concepto</TableHead>
+                          <TableHead className='w-24'>Referencia</TableHead>
+                          <TableHead className='w-24 text-right'>Importe</TableHead>
+                          <TableHead className='w-24 text-right'>Dto.</TableHead>
+                          <TableHead className='w-16 text-right'>IVA %</TableHead>
+                          <TableHead className='w-24 text-right'>IVA €</TableHead>
                           {!isReadOnly && <TableHead className='w-12'></TableHead>}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {section.items.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={isReadOnly ? 3 : 4} className='h-24 text-center'>
+                            <TableCell colSpan={isReadOnly ? 7 : 8} className='h-24 text-center'>
                               <p className='text-sm text-muted-foreground'>
                                 {isReadOnly ? 'Sin items en esta sección.' : 'Sin items. Añade el primero.'}
                               </p>
@@ -717,6 +744,22 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
                                   />
                                 )}
                               </TableCell>
+                              <TableCell>
+                                {isReadOnly ? (
+                                  <span className='text-sm'>{item.referencia || '-'}</span>
+                                ) : (
+                                  <Input
+                                    value={item.referencia || ''}
+                                    onChange={(e) =>
+                                      updateItem(section.id, item.id, {
+                                        referencia: e.target.value,
+                                      })
+                                    }
+                                    placeholder='Ref...'
+                                    className='h-8 border-none bg-transparent shadow-none focus-visible:bg-background focus-visible:ring-1'
+                                  />
+                                )}
+                              </TableCell>
                               <TableCell className='text-right'>
                                 {isReadOnly ? (
                                   <span className='text-sm font-mono'>{formatCurrency(item.precio)}</span>
@@ -728,9 +771,47 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
                                         precio: value,
                                       })
                                     }
-                                    className='h-8 w-28 border-none bg-transparent shadow-none focus-visible:bg-background focus-visible:ring-1'
+                                    className='h-8 w-24 border-none bg-transparent shadow-none focus-visible:bg-background focus-visible:ring-1'
                                   />
                                 )}
+                              </TableCell>
+                              <TableCell className='text-right'>
+                                {isReadOnly ? (
+                                  <span className='text-sm font-mono'>{formatCurrency(item.descuento ?? 0)}</span>
+                                ) : (
+                                  <CurrencyInput
+                                    value={item.descuento ?? 0}
+                                    onChange={(value) =>
+                                      updateItem(section.id, item.id, {
+                                        descuento: value,
+                                      })
+                                    }
+                                    className='h-8 w-20 border-none bg-transparent shadow-none focus-visible:bg-background focus-visible:ring-1'
+                                  />
+                                )}
+                              </TableCell>
+                              <TableCell className='text-right'>
+                                {isReadOnly ? (
+                                  <span className='text-sm font-mono'>{item.iva ?? 21}%</span>
+                                ) : (
+                                  <Input
+                                    type='number'
+                                    min={0}
+                                    max={100}
+                                    value={item.iva ?? 21}
+                                    onChange={(e) =>
+                                      updateItem(section.id, item.id, {
+                                        iva: parseFloat(e.target.value) || 0,
+                                      })
+                                    }
+                                    className='h-8 w-14 text-right border-none bg-transparent shadow-none focus-visible:bg-background focus-visible:ring-1'
+                                  />
+                                )}
+                              </TableCell>
+                              <TableCell className='text-right'>
+                                <span className='text-sm font-mono text-muted-foreground'>
+                                  {formatCurrency((item.precio - (item.descuento || 0)) * ((item.iva ?? 21) / 100))}
+                                </span>
                               </TableCell>
                               {!isReadOnly && (
                                 <TableCell>
@@ -751,7 +832,7 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
                       {!isReadOnly && (
                         <TableFooter>
                           <TableRow>
-                            <TableCell colSpan={4} className='p-2'>
+                            <TableCell colSpan={8} className='p-2'>
                               <Button
                                 variant='ghost'
                                 size='sm'
@@ -808,63 +889,41 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
 
             <Separator />
 
-            {/* Subtotal */}
+            {/* Subtotal bruto */}
             <div className='flex items-center justify-between'>
-              <span className='font-medium'>Subtotal</span>
+              <span className='text-muted-foreground'>Importe bruto</span>
+              <span className='font-mono'>
+                {formatCurrency(calculations.subtotalBruto)}
+              </span>
+            </div>
+
+            {/* Descuentos */}
+            {calculations.totalDescuentos > 0 && (
+              <div className='flex items-center justify-between'>
+                <span className='text-muted-foreground'>Descuentos</span>
+                <span className='font-mono text-destructive'>
+                  -{formatCurrency(calculations.totalDescuentos)}
+                </span>
+              </div>
+            )}
+
+            {/* Subtotal neto (Base imponible) */}
+            <div className='flex items-center justify-between'>
+              <span className='font-medium'>Subtotal (Base imponible)</span>
               <span className='font-mono text-lg'>
-                {formatCurrency(calculations.subtotal)}
+                {formatCurrency(calculations.subtotalNeto)}
               </span>
             </div>
 
-            {/* Discount */}
-            <div className='flex items-center justify-between gap-4'>
-              <div className='flex items-center gap-2'>
-                <span className='text-muted-foreground'>Descuento</span>
-                <div className='flex items-center gap-1'>
-                  {isReadOnly ? (
-                    <span className='font-mono'>{discountRate}</span>
-                  ) : (
-                    <Input
-                      type='number'
-                      value={discountRate}
-                      onChange={(e) => setDiscountRate(parseFloat(e.target.value) || 0)}
-                      className='h-8 w-16 text-right'
-                      min={0}
-                      max={100}
-                      step={0.5}
-                    />
-                  )}
-                  <Percent className='h-4 w-4 text-muted-foreground' />
-                </div>
-              </div>
-              <span className='font-mono text-destructive'>
-                -{formatCurrency(calculations.discount)}
-              </span>
-            </div>
+            <Separator />
 
-            {/* Tax */}
-            <div className='flex items-center justify-between gap-4'>
-              <div className='flex items-center gap-2'>
-                <span className='text-muted-foreground'>IVA</span>
-                <div className='flex items-center gap-1'>
-                  {isReadOnly ? (
-                    <span className='font-mono'>{taxRate}</span>
-                  ) : (
-                    <Input
-                      type='number'
-                      value={taxRate}
-                      onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
-                      className='h-8 w-16 text-right'
-                      min={0}
-                      max={100}
-                      step={0.5}
-                    />
-                  )}
-                  <Percent className='h-4 w-4 text-muted-foreground' />
-                </div>
+            {/* IVA desglosado por tipo */}
+            {Object.entries(calculations.ivaByRate).map(([rate, amount]) => (
+              <div key={rate} className='flex items-center justify-between'>
+                <span className='text-muted-foreground'>IVA {rate}%</span>
+                <span className='font-mono'>+{formatCurrency(amount)}</span>
               </div>
-              <span className='font-mono'>+{formatCurrency(calculations.tax)}</span>
-            </div>
+            ))}
 
             <Separator />
 
@@ -887,8 +946,6 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
         client={client}
         sections={sections}
         calculations={calculations}
-        taxRate={taxRate}
-        discountRate={discountRate}
       />
     </div>
   )

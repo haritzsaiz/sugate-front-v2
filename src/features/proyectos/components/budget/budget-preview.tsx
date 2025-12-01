@@ -19,15 +19,19 @@ interface BudgetPreviewProps {
   client: Client | null
   sections: BudgetSection[]
   calculations: {
+    subtotalBruto: number
+    totalDescuentos: number
+    subtotalNeto: number
+    ivaByRate: Record<number, number>
+    totalIva: number
+    total: number
+    totalConcepts: number
+    // Backward compatibility
     subtotal: number
     discount: number
     taxableAmount: number
     tax: number
-    total: number
-    totalConcepts: number
   }
-  taxRate: number
-  discountRate: number
 }
 
 const formatCurrency = (value: number) => {
@@ -55,8 +59,6 @@ export function BudgetPreview({
   client,
   sections,
   calculations,
-  taxRate,
-  discountRate,
 }: BudgetPreviewProps) {
   const getSectionTotal = (section: BudgetSection) => {
     return section.items.reduce((sum, item) => sum + item.precio, 0)
@@ -81,28 +83,46 @@ export function BudgetPreview({
             <tr style="border-bottom: 1px solid #e5e5e5;">
               <th style="padding: 8px 12px; text-align: left; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Nº</th>
               <th style="padding: 8px 12px; text-align: left; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Concepto</th>
-              <th style="padding: 8px 12px; text-align: right; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Precio</th>
+              <th style="padding: 8px 12px; text-align: left; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Ref.</th>
+              <th style="padding: 8px 12px; text-align: right; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Importe</th>
+              <th style="padding: 8px 12px; text-align: right; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Dto.</th>
+              <th style="padding: 8px 12px; text-align: right; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">IVA %</th>
+              <th style="padding: 8px 12px; text-align: right; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">IVA €</th>
             </tr>
           </thead>
           <tbody>
-            ${section.items.map((item, itemIndex) => `
+            ${section.items.map((item, itemIndex) => {
+              const itemNeto = item.precio - (item.descuento || 0)
+              const itemIva = itemNeto * ((item.iva ?? 21) / 100)
+              return `
               <tr style="border-bottom: 1px solid #f3f4f6;">
                 <td style="padding: 12px; font-family: monospace; font-size: 14px; color: #6b7280;">${sectionIndex + 1}.${itemIndex + 1}</td>
                 <td style="padding: 12px; font-size: 14px;">${item.titulo}</td>
+                <td style="padding: 12px; font-size: 14px; color: #6b7280;">${item.referencia || '-'}</td>
                 <td style="padding: 12px; text-align: right; font-family: monospace; font-size: 14px; font-weight: 500;">${formatCurrency(item.precio)}</td>
+                <td style="padding: 12px; text-align: right; font-family: monospace; font-size: 14px;">${formatCurrency(item.descuento ?? 0)}</td>
+                <td style="padding: 12px; text-align: right; font-family: monospace; font-size: 14px;">${item.iva ?? 21}%</td>
+                <td style="padding: 12px; text-align: right; font-family: monospace; font-size: 14px; color: #6b7280;">${formatCurrency(itemIva)}</td>
               </tr>
-            `).join('')}
+            `}).join('')}
           </tbody>
         </table>
       </div>
     `).join('')
 
-    const discountHtml = discountRate > 0 ? `
+    const descuentoHtml = calculations.totalDescuentos > 0 ? `
       <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; color: #dc2626;">
-        <span>Descuento (${discountRate}%)</span>
-        <span style="font-family: monospace;">-${formatCurrency(calculations.discount)}</span>
+        <span>Descuentos</span>
+        <span style="font-family: monospace;">-${formatCurrency(calculations.totalDescuentos)}</span>
       </div>
     ` : ''
+
+    const ivaDesgloseHtml = Object.entries(calculations.ivaByRate).map(([, amount]) => `
+      <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px;">
+        <span style="color: #6b7280;">IVA</span>
+        <span style="font-family: monospace;">+${formatCurrency(amount)}</span>
+      </div>
+    `).join('')
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -161,14 +181,16 @@ export function BudgetPreview({
           <!-- Summary -->
           <div style="margin-top: 40px; margin-left: auto; width: 320px; background: #f9fafb; padding: 20px; border-radius: 8px;">
             <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px;">
-              <span style="color: #6b7280;">Subtotal</span>
-              <span style="font-family: monospace;">${formatCurrency(calculations.subtotal)}</span>
+              <span style="color: #6b7280;">Importe bruto</span>
+              <span style="font-family: monospace;">${formatCurrency(calculations.subtotalBruto)}</span>
             </div>
-            ${discountHtml}
-            <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px;">
-              <span style="color: #6b7280;">IVA (${taxRate}%)</span>
-              <span style="font-family: monospace;">+${formatCurrency(calculations.tax)}</span>
+            ${descuentoHtml}
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; font-weight: 500;">
+              <span>Base imponible</span>
+              <span style="font-family: monospace;">${formatCurrency(calculations.subtotalNeto)}</span>
             </div>
+            <div style="border-top: 1px solid #e5e5e5; margin: 12px 0;"></div>
+            ${ivaDesgloseHtml}
             <div style="border-top: 1px solid #e5e5e5; margin: 12px 0;"></div>
             <div style="display: flex; justify-content: space-between; font-size: 20px; font-weight: 700;">
               <span>TOTAL</span>
@@ -210,22 +232,24 @@ export function BudgetPreview({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='!max-h-[95vh] !max-w-[90vw] overflow-hidden p-0'>
-        <DialogHeader className='flex flex-row items-center justify-between border-b px-6 py-4'>
-          <div>
-            <DialogTitle>Vista Previa del Presupuesto</DialogTitle>
-            <DialogDescription>
-              Revisa el documento antes de exportar
-            </DialogDescription>
-          </div>
-          <div className='flex items-center gap-2'>
-            <Button variant='outline' size='sm' onClick={handlePrint}>
-              <Printer className='mr-2 h-4 w-4' />
-              Imprimir
-            </Button>
-            <Button size='sm' onClick={handleExportPDF}>
-              <Download className='mr-2 h-4 w-4' />
-              PDF
-            </Button>
+        <DialogHeader className='border-b px-6 py-4 pr-14'>
+          <div className='flex flex-row items-center justify-between'>
+            <div>
+              <DialogTitle>Vista Previa del Presupuesto</DialogTitle>
+              <DialogDescription>
+                Revisa el documento antes de exportar
+              </DialogDescription>
+            </div>
+            <div className='flex items-center gap-2'>
+              <Button variant='outline' size='sm' onClick={handlePrint}>
+                <Printer className='mr-2 h-4 w-4' />
+                Imprimir
+              </Button>
+              <Button size='sm' onClick={handleExportPDF}>
+                <Download className='mr-2 h-4 w-4' />
+                PDF
+              </Button>
+            </div>
           </div>
         </DialogHeader>
 
@@ -298,21 +322,39 @@ export function BudgetPreview({
                     <tr className='border-b text-xs uppercase text-muted-foreground'>
                       <th className='py-2 text-left font-medium'>Nº</th>
                       <th className='py-2 text-left font-medium'>Concepto</th>
-                      <th className='py-2 text-right font-medium'>Precio</th>
+                      <th className='py-2 text-left font-medium'>Ref.</th>
+                      <th className='py-2 text-right font-medium'>Importe</th>
+                      <th className='py-2 text-right font-medium'>Dto.</th>
+                      <th className='py-2 text-right font-medium'>IVA %</th>
+                      <th className='py-2 text-right font-medium'>IVA €</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {section.items.map((item, itemIndex) => (
-                      <tr key={item.id} className='border-b border-gray-100'>
-                        <td className='py-3 font-mono text-sm text-muted-foreground'>
-                          {sectionIndex + 1}.{itemIndex + 1}
-                        </td>
-                        <td className='py-3 text-sm'>{item.titulo}</td>
-                        <td className='py-3 text-right font-mono text-sm font-medium'>
-                          {formatCurrency(item.precio)}
-                        </td>
-                      </tr>
-                    ))}
+                    {section.items.map((item, itemIndex) => {
+                      const itemNeto = item.precio - (item.descuento || 0)
+                      const itemIva = itemNeto * ((item.iva ?? 21) / 100)
+                      return (
+                        <tr key={item.id} className='border-b border-gray-100'>
+                          <td className='py-3 font-mono text-sm text-muted-foreground'>
+                            {sectionIndex + 1}.{itemIndex + 1}
+                          </td>
+                          <td className='py-3 text-sm'>{item.titulo}</td>
+                          <td className='py-3 text-sm text-muted-foreground'>{item.referencia || '-'}</td>
+                          <td className='py-3 text-right font-mono text-sm font-medium'>
+                            {formatCurrency(item.precio)}
+                          </td>
+                          <td className='py-3 text-right font-mono text-sm'>
+                            {formatCurrency(item.descuento ?? 0)}
+                          </td>
+                          <td className='py-3 text-right font-mono text-sm'>
+                            {item.iva ?? 21}%
+                          </td>
+                          <td className='py-3 text-right font-mono text-sm text-muted-foreground'>
+                            {formatCurrency(itemIva)}
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -321,19 +363,26 @@ export function BudgetPreview({
             {/* Summary */}
             <div className='ml-auto mt-10 w-80 rounded-lg bg-gray-50 p-5'>
               <div className='flex justify-between py-2 text-sm'>
-                <span className='text-muted-foreground'>Subtotal</span>
-                <span className='font-mono'>{formatCurrency(calculations.subtotal)}</span>
+                <span className='text-muted-foreground'>Importe bruto</span>
+                <span className='font-mono'>{formatCurrency(calculations.subtotalBruto)}</span>
               </div>
-              {discountRate > 0 && (
+              {calculations.totalDescuentos > 0 && (
                 <div className='flex justify-between py-2 text-sm text-destructive'>
-                  <span>Descuento ({discountRate}%)</span>
-                  <span className='font-mono'>-{formatCurrency(calculations.discount)}</span>
+                  <span>Descuentos</span>
+                  <span className='font-mono'>-{formatCurrency(calculations.totalDescuentos)}</span>
                 </div>
               )}
-              <div className='flex justify-between py-2 text-sm'>
-                <span className='text-muted-foreground'>IVA ({taxRate}%)</span>
-                <span className='font-mono'>+{formatCurrency(calculations.tax)}</span>
+              <div className='flex justify-between py-2 text-sm font-medium'>
+                <span>Base imponible</span>
+                <span className='font-mono'>{formatCurrency(calculations.subtotalNeto)}</span>
               </div>
+              <Separator className='my-3' />
+              {Object.entries(calculations.ivaByRate).map(([rate, amount]) => (
+                <div key={rate} className='flex justify-between py-2 text-sm'>
+                  <span className='text-muted-foreground'>IVA</span>
+                  <span className='font-mono'>+{formatCurrency(amount)}</span>
+                </div>
+              ))}
               <Separator className='my-3' />
               <div className='flex justify-between text-xl font-bold'>
                 <span>TOTAL</span>
