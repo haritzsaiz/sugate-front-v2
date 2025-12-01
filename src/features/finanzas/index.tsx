@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { toast } from 'sonner'
 import { format, parseISO, isWithinInterval } from 'date-fns'
 import type { DateRange } from 'react-day-picker'
@@ -13,8 +13,9 @@ import * as BillingService from '@/lib/billing-service'
 import type { Project, Billing } from '@/lib/types'
 import type { Client } from '@/lib/client-service'
 import type { FinancialRecord } from './data/schema'
-import { FinanzasTable } from './components/finanzas-table'
+import { FinanzasTable, type FinanzasTableRef } from './components/finanzas-table'
 import { FinanzasPrimaryButtons } from './components/finanzas-primary-buttons'
+import { exportFinanzasToExcelFull, type ExportDataWithProject } from './utils/excel-export'
 
 // Compute financial record from project and billing data
 function computeFinancialRecord(
@@ -75,6 +76,13 @@ export function Finanzas() {
   const [error, setError] = useState<string | null>(null)
   const [exportLoading, setExportLoading] = useState(false)
 
+  // Store projects and billings for export
+  const [projectsMap, setProjectsMap] = useState<Map<string, Project>>(new Map())
+  const [billingsMap, setBillingsMap] = useState<Map<string, Billing | null>>(new Map())
+
+  // Ref to access table methods
+  const tableRef = useRef<FinanzasTableRef>(null)
+
   // Date range filter
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
 
@@ -126,6 +134,16 @@ export function Finanzas() {
         return computeFinancialRecord(project, billing, client)
       })
 
+      // Store projects and billings maps for export
+      const newProjectsMap = new Map<string, Project>()
+      const newBillingsMap = new Map<string, Billing | null>()
+      filteredProjects.forEach((project, index) => {
+        newProjectsMap.set(project.id, project)
+        newBillingsMap.set(project.id, billings[index])
+      })
+      setProjectsMap(newProjectsMap)
+      setBillingsMap(newBillingsMap)
+
       setRecords(financialRecords)
     } catch (err) {
       setError(
@@ -155,30 +173,61 @@ export function Finanzas() {
     try {
       setExportLoading(true)
 
-      const blob = await BillingService.exportToExcel({
-        from: dateRange?.from,
-        to: dateRange?.to,
+      // Get rows to export: selected rows if any, otherwise all filtered (visible) rows
+      let rowsToExport: FinancialRecord[] = []
+      
+      if (tableRef.current) {
+        const selectedRows = tableRef.current.getSelectedRows()
+        if (selectedRows.length > 0) {
+          rowsToExport = selectedRows
+        } else {
+          rowsToExport = tableRef.current.getFilteredRows()
+        }
+      } else {
+        // Fallback to all records if table ref is not available
+        rowsToExport = records
+      }
+
+      if (rowsToExport.length === 0) {
+        toast.warning('Sin datos para exportar', {
+          description: 'No hay registros visibles para exportar.',
+        })
+        return
+      }
+
+      // Build export data with project and billing details
+      const exportData: ExportDataWithProject[] = rowsToExport.map((record) => {
+        const project = projectsMap.get(record.projectId)
+        const billing = billingsMap.get(record.projectId) ?? null
+
+        return {
+          record,
+          billing,
+          project: project
+            ? {
+                prevision: project.prevision,
+                planificacion: project.planificacion,
+                ejecucion: project.ejecucion,
+                created_at: project.created_at,
+                updated_at: project.updated_at,
+              }
+            : undefined,
+        }
       })
 
-      // Generate filename with date range
+      // Generate date range label for filename
       const fromDate = dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : ''
       const toDate = dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : ''
-      const dateRangeStr = fromDate && toDate ? `_${fromDate}_${toDate}` : ''
-      const filename = `reporte_financiero${dateRangeStr}.xlsx`
+      const dateRangeLabel = fromDate && toDate ? `${fromDate}_${toDate}` : undefined
 
-      const downloadUrl = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = downloadUrl
-      link.setAttribute('download', filename)
-      document.body.appendChild(link)
-      link.click()
+      // Export using SheetJS
+      await exportFinanzasToExcelFull(exportData, dateRangeLabel)
 
-      // Clean up
-      link.parentNode?.removeChild(link)
-      window.URL.revokeObjectURL(downloadUrl)
-
+      const selectedCount = tableRef.current?.getSelectedRows().length ?? 0
       toast.success('Exportación exitosa', {
-        description: 'El archivo Excel se ha descargado correctamente.',
+        description: selectedCount > 0
+          ? `Se han exportado ${selectedCount} registros seleccionados.`
+          : `Se han exportado ${rowsToExport.length} registros.`,
       })
     } catch (err) {
       console.error('Error exporting to Excel:', err)
@@ -228,6 +277,7 @@ export function Finanzas() {
           </div>
         ) : (
           <FinanzasTable
+            ref={tableRef}
             data={records}
             isLoading={isFetching}
             dateRange={dateRange}

@@ -1,10 +1,11 @@
 import * as React from 'react'
-import { useMemo } from 'react'
+import { useMemo, useImperativeHandle, forwardRef } from 'react'
 import type { DateRange } from 'react-day-picker'
 import {
   type ColumnFiltersState,
   type SortingState,
   type VisibilityState,
+  type Table as TableType,
   flexRender,
   getCoreRowModel,
   getFacetedRowModel,
@@ -38,13 +39,24 @@ type FinanzasTableProps = {
   officeOptions: Array<{ label: string; value: string }>
 }
 
-export function FinanzasTable({
-  data,
-  isLoading,
-  dateRange,
-  onDateRangeChange,
-  officeOptions,
-}: FinanzasTableProps) {
+// Expose table methods for parent access
+export interface FinanzasTableRef {
+  getSelectedRows: () => FinancialRecord[]
+  getFilteredRows: () => FinancialRecord[]
+  getTable: () => TableType<FinancialRecord>
+}
+
+export const FinanzasTable = forwardRef<FinanzasTableRef, FinanzasTableProps>(
+  function FinanzasTable(
+    {
+      data,
+      isLoading,
+      dateRange,
+      onDateRangeChange,
+      officeOptions,
+    },
+    ref
+  ) {
   // Local UI-only states
   const [rowSelection, setRowSelection] = React.useState({})
   const [sorting, setSorting] = React.useState<SortingState>([])
@@ -90,6 +102,19 @@ export function FinanzasTable({
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
   })
+
+  // Expose methods to parent via ref
+  useImperativeHandle(ref, () => ({
+    getSelectedRows: () => {
+      const selectedRowModels = table.getSelectedRowModel().rows
+      return selectedRowModels.map((row) => row.original)
+    },
+    getFilteredRows: () => {
+      const filteredRowModels = table.getFilteredRowModel().rows
+      return filteredRowModels.map((row) => row.original)
+    },
+    getTable: () => table,
+  }))
 
   // Calculate totals from filtered rows
   const totals = useMemo(() => {
@@ -288,4 +313,4 @@ export function FinanzasTable({
       <DataTablePagination table={table} />
     </div>
   )
-}
+})
