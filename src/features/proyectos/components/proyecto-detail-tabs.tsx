@@ -585,6 +585,7 @@ export function ProyectoDetailTabs({ proyecto, cliente, activeTab, onProjectUpda
             } catch (error) {
               console.error('Error saving budget:', error)
               toast.error('Error al guardar el presupuesto')
+              throw error // Re-throw so BudgetEditor can handle selection
             }
           }}
           onApproveBudget={async (budgetId: string) => {

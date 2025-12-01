@@ -58,7 +58,7 @@ import { BudgetPreview } from './budget-preview'
 interface BudgetEditorProps {
   project: Project
   client: Client | null
-  onSaveBudgetDetails: (budgetData: BudgetData) => void
+  onSaveBudgetDetails: (budgetData: BudgetData) => Promise<void>
   onApproveBudget?: (budgetId: string) => void
 }
 
@@ -335,7 +335,7 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
     )
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // Validation
     const emptySections = sections.filter((s) => !s.concepto.trim())
     if (emptySections.length > 0) {
@@ -352,9 +352,12 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
     }
 
     // Build BudgetData object matching Go model
+    const newBudgetId = generateId()
+    // Calculate next version based on the highest existing version
+    const maxExistingVersion = presupuestos.reduce((max, p) => Math.max(max, p.version || 0), 0)
     const budgetData: BudgetData = {
-      id: generateId(),
-      version: 1,
+      id: newBudgetId,
+      version: maxExistingVersion + 1,
       created_at: new Date().toISOString(),
       secciones: sections.map((section) => ({
         id: section.id,
@@ -376,7 +379,15 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
       })),
     }
 
-    onSaveBudgetDetails(budgetData)
+    try {
+      await onSaveBudgetDetails(budgetData)
+      // After successful save, select the new budget
+      setIsNewBudget(false)
+      setSelectedBudgetId(newBudgetId)
+    } catch (error) {
+      // Error is already handled by the parent, just don't change state
+      console.error('Error saving budget:', error)
+    }
   }
 
   const getSectionTotal = (section: BudgetSection) => {
@@ -818,16 +829,23 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
                                   <span className='text-sm font-mono'>{item.iva ?? 21}%</span>
                                 ) : (
                                   <Input
-                                    type='number'
-                                    min={0}
-                                    max={100}
+                                    type='text'
+                                    inputMode='numeric'
                                     value={item.iva ?? 21}
-                                    onChange={(e) =>
-                                      updateItem(section.id, item.id, {
-                                        iva: parseFloat(e.target.value) || 0,
-                                      })
-                                    }
+                                    onChange={(e) => {
+                                      const value = e.target.value
+                                      // Allow empty, or valid numbers 0-100
+                                      if (value === '' || /^\d{0,3}$/.test(value)) {
+                                        const num = parseFloat(value) || 0
+                                        if (num <= 100) {
+                                          updateItem(section.id, item.id, {
+                                            iva: num,
+                                          })
+                                        }
+                                      }
+                                    }}
                                     className='h-8 w-14 text-right border-none bg-transparent shadow-none focus-visible:bg-background focus-visible:ring-1'
+                                    tabIndex={0}
                                   />
                                 )}
                               </TableCell>
