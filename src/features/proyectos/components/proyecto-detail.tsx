@@ -139,10 +139,35 @@ export function ProyectoDetail() {
         {/* Divider */}
         <div className='border-t' />
 
-        {/* Sidebar Layout */}
+        {/* Mobile/Tablet Tabs - Horizontal scrollable */}
+        <div className='flex gap-2 overflow-x-auto pb-2 lg:hidden'>
+          {[
+            { id: 'resumen', label: 'Resumen' },
+            { id: 'detalles', label: 'Detalles' },
+            { id: 'ubicacion', label: 'Ubicación' },
+            { id: 'presupuesto', label: 'Presupuesto' },
+            { id: 'facturacion', label: 'Facturación' },
+            { id: 'admin', label: 'Admin' },
+            { id: 'fotos', label: 'Fotos' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`shrink-0 rounded-full px-4 py-1.5 text-sm transition-colors ${
+                activeTab === tab.id
+                  ? 'bg-primary text-primary-foreground font-medium'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Desktop Sidebar Layout */}
         <div className='flex gap-6'>
-          {/* Sidebar */}
-          <div className='w-48 flex-shrink-0'>
+          {/* Sidebar - Hidden on mobile/tablet */}
+          <div className='hidden w-48 flex-shrink-0 lg:block'>
             <div className='space-y-2'>
               <button
                 onClick={() => setActiveTab('resumen')}

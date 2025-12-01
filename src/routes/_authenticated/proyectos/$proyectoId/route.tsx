@@ -149,10 +149,91 @@ function ProyectoDetailLayout() {
         {/* Divider */}
         <div className='border-t' />
 
+        {/* Mobile/Tablet Tabs - Horizontal scrollable */}
+        <div className='flex gap-2 overflow-x-auto pb-2 lg:hidden'>
+          <Link
+            to='/proyectos/$proyectoId/resumen'
+            params={{ proyectoId }}
+            className={`shrink-0 rounded-full px-4 py-1.5 text-sm transition-colors ${
+              activeTab === 'resumen'
+                ? 'bg-primary text-primary-foreground font-medium'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            }`}
+          >
+            Resumen
+          </Link>
+          <Link
+            to='/proyectos/$proyectoId/detalles'
+            params={{ proyectoId }}
+            className={`shrink-0 rounded-full px-4 py-1.5 text-sm transition-colors ${
+              activeTab === 'detalles'
+                ? 'bg-primary text-primary-foreground font-medium'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            }`}
+          >
+            Detalles
+          </Link>
+          <Link
+            to='/proyectos/$proyectoId/ubicacion'
+            params={{ proyectoId }}
+            className={`shrink-0 rounded-full px-4 py-1.5 text-sm transition-colors ${
+              activeTab === 'ubicacion'
+                ? 'bg-primary text-primary-foreground font-medium'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            }`}
+          >
+            Ubicación
+          </Link>
+          <Link
+            to='/proyectos/$proyectoId/presupuesto'
+            params={{ proyectoId }}
+            className={`shrink-0 rounded-full px-4 py-1.5 text-sm transition-colors ${
+              activeTab === 'presupuesto'
+                ? 'bg-primary text-primary-foreground font-medium'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            }`}
+          >
+            Presupuesto
+          </Link>
+          <Link
+            to='/proyectos/$proyectoId/facturacion'
+            params={{ proyectoId }}
+            className={`shrink-0 rounded-full px-4 py-1.5 text-sm transition-colors ${
+              activeTab === 'facturacion'
+                ? 'bg-primary text-primary-foreground font-medium'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            }`}
+          >
+            Facturación
+          </Link>
+          <Link
+            to='/proyectos/$proyectoId/admin'
+            params={{ proyectoId }}
+            className={`shrink-0 rounded-full px-4 py-1.5 text-sm transition-colors ${
+              activeTab === 'admin'
+                ? 'bg-primary text-primary-foreground font-medium'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            }`}
+          >
+            Admin
+          </Link>
+          <Link
+            to='/proyectos/$proyectoId/fotos'
+            params={{ proyectoId }}
+            className={`shrink-0 rounded-full px-4 py-1.5 text-sm transition-colors ${
+              activeTab === 'fotos'
+                ? 'bg-primary text-primary-foreground font-medium'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            }`}
+          >
+            Fotos
+          </Link>
+        </div>
+
         {/* Sidebar Layout */}
         <div className='flex gap-6'>
-          {/* Sidebar */}
-          <div className='w-48 flex-shrink-0'>
+          {/* Sidebar - Hidden on mobile/tablet */}
+          <div className='hidden w-48 flex-shrink-0 lg:block'>
             <div className='space-y-2'>
               <Link
                 to='/proyectos/$proyectoId/resumen'

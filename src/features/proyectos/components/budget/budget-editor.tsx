@@ -424,7 +424,6 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
             </h2>
             {selectedBudgetId === approvedBudgetId && !isNewBudget && (
               <Badge variant='default' className='bg-green-600 text-xs'>
-                <CheckCircle className='mr-1 h-3 w-3' />
                 Aprobado
               </Badge>
             )}
@@ -483,9 +482,6 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
               {presupuestos.map((budget) => (
                 <SelectItem key={budget.id} value={budget.id}>
                   <div className='flex items-center gap-2'>
-                    {budget.id === approvedBudgetId && (
-                      <CheckCircle className='h-4 w-4 shrink-0 text-green-600' />
-                    )}
                     <span className='truncate'>
                       {formatCurrency(budget.total_con_iva)} - {formatDate(budget.created_at)}
                     </span>
@@ -710,7 +706,7 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
                       <TableHeader>
                         <TableRow className='hover:bg-transparent'>
                           <TableHead className='w-12'></TableHead>
-                          <TableHead className='min-w-[150px]'>Concepto</TableHead>
+                          <TableHead className='min-w-[150px] max-w-[300px]'>Concepto</TableHead>
                           <TableHead className='w-48'>Referencia</TableHead>
                           <TableHead className='w-24 text-right'>Importe</TableHead>
                           <TableHead className='w-24 text-right'>Dto.</TableHead>
@@ -738,7 +734,7 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
                               </TableCell>
                               <TableCell>
                                 {isReadOnly ? (
-                                  <span className='text-sm'>{item.titulo}</span>
+                                  <span className='text-sm whitespace-pre-wrap break-words'>{item.titulo}</span>
                                 ) : (
                                   <Textarea
                                     value={item.titulo}
