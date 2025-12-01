@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { type Project, type BudgetData, type Oficina, type ProjectStatus } from '@/lib/types'
 import { type Client } from '@/lib/client-service'
 import { getAllOficinas } from '@/lib/oficina-service'
@@ -71,7 +71,7 @@ export function ProyectoDetailTabs({ proyecto, cliente, activeTab, onProjectUpda
 
   // Oficinas data for the badge
   const [oficinas, setOficinas] = useState<Oficina[]>([])
-  const [loadingOficinas, setLoadingOficinas] = useState(true)
+  const [, setLoadingOficinas] = useState(true)
 
   // Fetch oficinas to get colors
   useEffect(() => {

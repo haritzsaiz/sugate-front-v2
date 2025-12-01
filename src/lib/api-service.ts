@@ -3,6 +3,9 @@ import { authService } from './auth-service'
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
 
+console.log('🔐 API Configuration Debug:')
+console.log('  API_BASE_URL:', API_BASE_URL || '❌ NOT SET')
+
 export class ApiError extends Error {
   constructor(
     message: string,

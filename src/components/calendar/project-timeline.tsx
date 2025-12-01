@@ -3,12 +3,12 @@ import { Calendar, momentLocalizer, type View, type Event, Views } from 'react-b
 import moment from 'moment'
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop'
 import { toast } from 'sonner'
-import { Play, Clock, CheckCircle, XCircle, FileText, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Play, Clock, CheckCircle, XCircle, FileText, FileX, ChevronLeft, ChevronRight } from 'lucide-react'
 
 import { getAllProjects } from '@/lib/project-service'
 import { getAllClients } from '@/lib/client-service'
+import { type Project } from '@/lib/types'
 import {
-    type Proyecto,
     type ProjectStatus,
     projectStatusLabels,
 } from '@/features/proyectos/data/schema'
@@ -41,6 +41,7 @@ const DnDCalendar = withDragAndDrop(Calendar)
 // Status icons using Lucide icons (same as proyectos-columns.tsx)
 const statusIcons: Record<ProjectStatus, React.ReactNode> = {
     presupuesto: <FileText className='h-3 w-3' />,
+    presupuesto_abandonado: <FileX className='h-3 w-3' />,
     planificacion: <Clock className='h-3 w-3' />,
     en_ejecucion: <Play className='h-3 w-3' />,
     finalizado: <CheckCircle className='h-3 w-3' />,
@@ -50,13 +51,14 @@ const statusIcons: Record<ProjectStatus, React.ReactNode> = {
 // Calendar event type
 interface ProjectEvent extends Event {
     id: string
-    proyecto: Proyecto
+    proyecto: Project
     clientName: string
 }
 
 // Convert Tailwind classes to CSS colors for calendar events
 const eventColors: Record<ProjectStatus, { bg: string; border: string; text: string }> = {
     presupuesto: { bg: '#fef9c3', border: '#fde047', text: '#854d0e' },
+    presupuesto_abandonado: { bg: '#fef3c7', border: '#fcd34d', text: '#92400e' },
     planificacion: { bg: '#dbeafe', border: '#93c5fd', text: '#1e40af' },
     en_ejecucion: { bg: '#dcfce7', border: '#86efac', text: '#166534' },
     finalizado: { bg: '#f3f4f6', border: '#d1d5db', text: '#374151' },
@@ -64,7 +66,7 @@ const eventColors: Record<ProjectStatus, { bg: string; border: string; text: str
 }
 
 export function ProjectTimeline() {
-    const [projects, setProjects] = useState<Proyecto[]>([])
+    const [projects, setProjects] = useState<Project[]>([])
     const [clients, setClients] = useState<Map<string, string>>(new Map())
     const [loading, setLoading] = useState(true)
     const [view, setView] = useState<View>('month')

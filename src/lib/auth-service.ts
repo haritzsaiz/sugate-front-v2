@@ -7,6 +7,15 @@ const OIDC_REDIRECT_URI = import.meta.env.VITE_OIDC_REDIRECT_URI || `${window.lo
 const OIDC_POST_LOGOUT_REDIRECT_URI = import.meta.env.VITE_OIDC_POST_LOGOUT_REDIRECT_URI || window.location.origin
 const OIDC_SCOPE = import.meta.env.VITE_OIDC_SCOPE || 'openid profile email'
 
+// Debug: Log environment variables for OIDC configuration
+console.log('🔐 OIDC Configuration Debug:')
+console.log('  VITE_OIDC_AUTHORITY:', OIDC_AUTHORITY || '❌ NOT SET')
+console.log('  VITE_OIDC_CLIENT_ID:', OIDC_CLIENT_ID || '❌ NOT SET')
+console.log('  VITE_OIDC_REDIRECT_URI:', OIDC_REDIRECT_URI)
+console.log('  VITE_OIDC_POST_LOGOUT_REDIRECT_URI:', OIDC_POST_LOGOUT_REDIRECT_URI)
+console.log('  VITE_OIDC_SCOPE:', OIDC_SCOPE)
+console.log('  All env vars:', import.meta.env)
+
 const userManagerSettings = {
   authority: OIDC_AUTHORITY,
   client_id: OIDC_CLIENT_ID,
