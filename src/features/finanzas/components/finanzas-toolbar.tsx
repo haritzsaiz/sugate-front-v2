@@ -42,7 +42,7 @@ export function FinanzasToolbar({
           <DateRangePicker
             date={dateRange}
             onDateChange={onDateRangeChange}
-            className='h-8'
+            className='h-8 w-[30%] min-w-[200px]'
             placeholder='Rango de fechas'
           />
           {table.getColumn('projectStatus') && (
