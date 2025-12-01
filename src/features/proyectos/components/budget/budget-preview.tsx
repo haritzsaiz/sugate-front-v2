@@ -83,7 +83,7 @@ export function BudgetPreview({
             <tr style="border-bottom: 1px solid #e5e5e5;">
               <th style="padding: 8px 12px; text-align: left; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Nº</th>
               <th style="padding: 8px 12px; text-align: left; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Concepto</th>
-              <th style="padding: 8px 12px; text-align: left; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Ref.</th>
+              <th style="padding: 8px 12px 8px 24px; text-align: left; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Ref.</th>
               <th style="padding: 8px 12px; text-align: right; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Importe</th>
               <th style="padding: 8px 12px; text-align: right; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Dto.</th>
               <th style="padding: 8px 12px; text-align: right; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">IVA %</th>
@@ -97,8 +97,8 @@ export function BudgetPreview({
               return `
               <tr style="border-bottom: 1px solid #f3f4f6;">
                 <td style="padding: 12px; font-family: monospace; font-size: 14px; color: #6b7280;">${sectionIndex + 1}.${itemIndex + 1}</td>
-                <td style="padding: 12px; font-size: 14px;">${item.titulo}</td>
-                <td style="padding: 12px; font-size: 14px; color: #6b7280;">${item.referencia || '-'}</td>
+                <td style="padding: 12px; font-size: 14px; word-wrap: break-word; max-width: 250px;">${item.titulo}</td>
+                <td style="padding: 12px 12px 12px 24px; font-size: 14px; color: #6b7280;">${item.referencia || '-'}</td>
                 <td style="padding: 12px; text-align: right; font-family: monospace; font-size: 14px; font-weight: 500;">${formatCurrency(item.precio)}</td>
                 <td style="padding: 12px; text-align: right; font-family: monospace; font-size: 14px;">${formatCurrency(item.descuento ?? 0)}</td>
                 <td style="padding: 12px; text-align: right; font-family: monospace; font-size: 14px;">${item.iva ?? 21}%</td>
@@ -235,7 +235,7 @@ export function BudgetPreview({
         <DialogHeader className='border-b px-6 py-4 pr-14'>
           <div className='flex flex-row items-center justify-between'>
             <div>
-              <DialogTitle>Vista Previa del Presupuesto</DialogTitle>
+              <DialogTitle className='text-wrap break-words'>Vista Previa del Presupuesto</DialogTitle>
               <DialogDescription>
                 Revisa el documento antes de exportar
               </DialogDescription>
@@ -322,7 +322,7 @@ export function BudgetPreview({
                     <tr className='border-b text-xs uppercase text-muted-foreground'>
                       <th className='py-2 text-left font-medium'>Nº</th>
                       <th className='py-2 text-left font-medium'>Concepto</th>
-                      <th className='py-2 text-left font-medium'>Ref.</th>
+                      <th className='py-2 pl-6 text-left font-medium'>Ref.</th>
                       <th className='py-2 text-right font-medium'>Importe</th>
                       <th className='py-2 text-right font-medium'>Dto.</th>
                       <th className='py-2 text-right font-medium'>IVA %</th>
@@ -338,8 +338,8 @@ export function BudgetPreview({
                           <td className='py-3 font-mono text-sm text-muted-foreground'>
                             {sectionIndex + 1}.{itemIndex + 1}
                           </td>
-                          <td className='py-3 text-sm'>{item.titulo}</td>
-                          <td className='py-3 text-sm text-muted-foreground'>{item.referencia || '-'}</td>
+                          <td className='py-3 text-sm max-w-xs break-words'>{item.titulo}</td>
+                          <td className='py-3 pl-6 text-sm text-muted-foreground'>{item.referencia || '-'}</td>
                           <td className='py-3 text-right font-mono text-sm font-medium'>
                             {formatCurrency(item.precio)}
                           </td>

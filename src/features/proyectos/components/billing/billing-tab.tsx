@@ -419,6 +419,12 @@ export function BillingTab({ project }: BillingTabProps) {
       {/* Stats Bar */}
       <div className='grid grid-cols-2 gap-4 sm:grid-cols-4'>
         <div className='rounded-lg border bg-card p-4 text-center'>
+          <p className='text-2xl font-bold'>
+            {formatCurrency(financialSummary.total)}
+          </p>
+          <p className='text-xs text-muted-foreground text-wrap break-words'>Total Presupuesto</p>
+        </div>
+        <div className='rounded-lg border bg-card p-4 text-center'>
           <p className='text-2xl font-bold text-green-600'>
             {formatCurrency(financialSummary.paid)}
           </p>
@@ -429,12 +435,6 @@ export function BillingTab({ project }: BillingTabProps) {
             {formatCurrency(financialSummary.outstanding)}
           </p>
           <p className='text-xs text-muted-foreground'>Factura emitida - Pdte. Cobro</p>
-        </div>
-        <div className='rounded-lg border bg-card p-4 text-center'>
-          <p className='text-2xl font-bold'>
-            {formatCurrency(financialSummary.total)}
-          </p>
-          <p className='text-xs text-muted-foreground'>Total Presupuesto</p>
         </div>
         <div className='rounded-lg border bg-card p-4 text-center'>
           <p className='text-2xl font-bold text-destructive'>
@@ -537,7 +537,7 @@ export function BillingTab({ project }: BillingTabProps) {
                 )}
               </div>
             </TooltipProvider>
-            
+
             {/* Legend */}
             <div className='flex flex-wrap gap-4 text-xs'>
               <div className='flex items-center gap-1.5'>
@@ -730,7 +730,7 @@ export function BillingTab({ project }: BillingTabProps) {
                         Crea hitos manualmente o genera varios a partir de porcentajes.
                       </p>
                     </div>
-                    
+
                     <div className='mx-auto mt-4 grid w-full max-w-2xl grid-cols-1 gap-4 sm:grid-cols-2'>
                       <div className='space-y-3 rounded-lg border bg-card p-4 text-left'>
                         <div className='flex items-center gap-2'>
@@ -769,7 +769,7 @@ export function BillingTab({ project }: BillingTabProps) {
                   </div>
                 </div>
               )}
-              
+
               {milestones.length > 0 && (
                 <div className='flex justify-end pt-4'>
                   <Button onClick={handleSaveChanges} disabled={isSaving} className='gap-2'>

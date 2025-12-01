@@ -5,6 +5,7 @@ import { getBillingByProjectId } from '@/lib/billing-service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { CurrencyInput } from '@/components/ui/currency-input'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -83,8 +84,15 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
   const [isNewBudget, setIsNewBudget] = useState(false)
   const [budgetToCopyId, setBudgetToCopyId] = useState<string | null>(null)
 
-  // Get the list of presupuestos from the project
-  const presupuestos = project.presupuestos || []
+  // Get the list of presupuestos from the project, sorted by created_at (newest first)
+  const presupuestos = useMemo(() => {
+    const list = project.presupuestos || []
+    return [...list].sort((a, b) => {
+      const dateA = a.created_at ? new Date(a.created_at).getTime() : 0
+      const dateB = b.created_at ? new Date(b.created_at).getTime() : 0
+      return dateB - dateA // Descending order (newest first)
+    })
+  }, [project.presupuestos])
   const approvedBudgetId = project.budget_id_aprobado
 
   // Load budget data when selection changes
@@ -541,7 +549,7 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
                 <p className='mb-6 max-w-md text-center text-sm text-muted-foreground'>
                   Puedes empezar desde cero o copiar un presupuesto existente como base.
                 </p>
-                <div className='flex flex-col sm:flex-row gap-4 w-full max-w-lg'>
+                <div className='flex flex-col sm:flex-row gap-4 w-full max-w-[66%]'>
                   {/* Start from scratch */}
                   <div className='flex-1 rounded-lg border bg-card p-6 text-center hover:border-primary transition-colors'>
                     <div className='mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mx-auto'>
@@ -703,7 +711,7 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
                         <TableRow className='hover:bg-transparent'>
                           <TableHead className='w-12'></TableHead>
                           <TableHead className='min-w-[150px]'>Concepto</TableHead>
-                          <TableHead className='w-24'>Referencia</TableHead>
+                          <TableHead className='w-48'>Referencia</TableHead>
                           <TableHead className='w-24 text-right'>Importe</TableHead>
                           <TableHead className='w-24 text-right'>Dto.</TableHead>
                           <TableHead className='w-16 text-right'>IVA %</TableHead>
@@ -732,7 +740,7 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
                                 {isReadOnly ? (
                                   <span className='text-sm'>{item.titulo}</span>
                                 ) : (
-                                  <Input
+                                  <Textarea
                                     value={item.titulo}
                                     onChange={(e) =>
                                       updateItem(section.id, item.id, {
@@ -740,7 +748,13 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
                                       })
                                     }
                                     placeholder='Concepto...'
-                                    className='h-8 border-none bg-transparent shadow-none focus-visible:bg-background focus-visible:ring-1'
+                                    className='min-h-[32px] resize-none border-none bg-transparent shadow-none focus-visible:bg-background focus-visible:ring-1'
+                                    rows={1}
+                                    onInput={(e) => {
+                                      const target = e.target as HTMLTextAreaElement
+                                      target.style.height = 'auto'
+                                      target.style.height = target.scrollHeight + 'px'
+                                    }}
                                   />
                                 )}
                               </TableCell>
@@ -920,7 +934,7 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
             {/* IVA desglosado por tipo */}
             {Object.entries(calculations.ivaByRate).map(([rate, amount]) => (
               <div key={rate} className='flex items-center justify-between'>
-                <span className='text-muted-foreground'>IVA {rate}%</span>
+                <span className='text-muted-foreground'>IVA</span>
                 <span className='font-mono'>+{formatCurrency(amount)}</span>
               </div>
             ))}
