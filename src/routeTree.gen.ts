@@ -9,11 +9,11 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthCallbackRouteImport } from './routes/auth-callback'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthSilentCallbackRouteImport } from './routes/auth/silent-callback'
 import { Route as AuthLogoutCallbackRouteImport } from './routes/auth/logout-callback'
-import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks/index'
 import { Route as AuthenticatedProyectosIndexRouteImport } from './routes/_authenticated/proyectos/index'
 import { Route as AuthenticatedOficinasIndexRouteImport } from './routes/_authenticated/oficinas/index'
@@ -32,6 +32,11 @@ import { Route as AuthenticatedProyectosProyectoIdFacturacionRouteImport } from 
 import { Route as AuthenticatedProyectosProyectoIdDetallesRouteImport } from './routes/_authenticated/proyectos/$proyectoId/detalles'
 import { Route as AuthenticatedProyectosProyectoIdAdminRouteImport } from './routes/_authenticated/proyectos/$proyectoId/admin'
 
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth-callback',
+  path: '/auth-callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -49,11 +54,6 @@ const AuthSilentCallbackRoute = AuthSilentCallbackRouteImport.update({
 const AuthLogoutCallbackRoute = AuthLogoutCallbackRouteImport.update({
   id: '/auth/logout-callback',
   path: '/auth/logout-callback',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthCallbackRoute = AuthCallbackRouteImport.update({
-  id: '/auth/callback',
-  path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedTasksIndexRoute = AuthenticatedTasksIndexRouteImport.update({
@@ -159,7 +159,7 @@ const AuthenticatedProyectosProyectoIdAdminRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/auth/callback': typeof AuthCallbackRoute
+  '/auth-callback': typeof AuthCallbackRoute
   '/auth/logout-callback': typeof AuthLogoutCallbackRoute
   '/auth/silent-callback': typeof AuthSilentCallbackRoute
   '/': typeof AuthenticatedIndexRoute
@@ -182,7 +182,7 @@ export interface FileRoutesByFullPath {
   '/proyectos/$proyectoId/': typeof AuthenticatedProyectosProyectoIdIndexRoute
 }
 export interface FileRoutesByTo {
-  '/auth/callback': typeof AuthCallbackRoute
+  '/auth-callback': typeof AuthCallbackRoute
   '/auth/logout-callback': typeof AuthLogoutCallbackRoute
   '/auth/silent-callback': typeof AuthSilentCallbackRoute
   '/': typeof AuthenticatedIndexRoute
@@ -206,7 +206,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/auth/callback': typeof AuthCallbackRoute
+  '/auth-callback': typeof AuthCallbackRoute
   '/auth/logout-callback': typeof AuthLogoutCallbackRoute
   '/auth/silent-callback': typeof AuthSilentCallbackRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -231,7 +231,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/auth/callback'
+    | '/auth-callback'
     | '/auth/logout-callback'
     | '/auth/silent-callback'
     | '/'
@@ -254,7 +254,7 @@ export interface FileRouteTypes {
     | '/proyectos/$proyectoId/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/auth/callback'
+    | '/auth-callback'
     | '/auth/logout-callback'
     | '/auth/silent-callback'
     | '/'
@@ -277,7 +277,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_authenticated'
-    | '/auth/callback'
+    | '/auth-callback'
     | '/auth/logout-callback'
     | '/auth/silent-callback'
     | '/_authenticated/'
@@ -309,6 +309,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth-callback': {
+      id: '/auth-callback'
+      path: '/auth-callback'
+      fullPath: '/auth-callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
@@ -335,13 +342,6 @@ declare module '@tanstack/react-router' {
       path: '/auth/logout-callback'
       fullPath: '/auth/logout-callback'
       preLoaderRoute: typeof AuthLogoutCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/callback': {
-      id: '/auth/callback'
-      path: '/auth/callback'
-      fullPath: '/auth/callback'
-      preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/tasks/': {

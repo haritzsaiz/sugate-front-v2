@@ -3,7 +3,7 @@ import { UserManager, WebStorageStateStore, User } from 'oidc-client-ts'
 
 const OIDC_AUTHORITY = import.meta.env.VITE_OIDC_AUTHORITY || ''
 const OIDC_CLIENT_ID = import.meta.env.VITE_OIDC_CLIENT_ID || ''
-const OIDC_REDIRECT_URI = import.meta.env.VITE_OIDC_REDIRECT_URI || `${window.location.origin}/auth/callback`
+const OIDC_REDIRECT_URI = import.meta.env.VITE_OIDC_REDIRECT_URI || `${window.location.origin}/auth-callback`
 const OIDC_POST_LOGOUT_REDIRECT_URI = import.meta.env.VITE_OIDC_POST_LOGOUT_REDIRECT_URI || window.location.origin
 const OIDC_SCOPE = import.meta.env.VITE_OIDC_SCOPE || 'openid profile email'
 

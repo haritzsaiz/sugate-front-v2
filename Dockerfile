@@ -21,7 +21,7 @@ COPY . .
 RUN echo "VITE_API_BASE_URL=https://gestion.sugatecocinas.com:8888/api" > .env
 RUN echo "VITE_OIDC_AUTHORITY=https://gestion.sugatecocinas.com:8888/auth/realms/sugate" >> .env
 RUN echo "VITE_OIDC_CLIENT_ID=frontend" >> .env
-RUN echo "VITE_OIDC_REDIRECT_URI=`${window.location.origin}/auth/callback`" >> .env
+RUN echo "VITE_OIDC_REDIRECT_URI=`${window.location.origin}/auth-callback`" >> .env
 RUN echo "VITE_OIDC_POST_LOGOUT_REDIRECT_URI=`${window.location.origin}`" >> .env
 RUN echo "VITE_OIDC_SCOPE=openid profile email" >> .env
 # Build the application

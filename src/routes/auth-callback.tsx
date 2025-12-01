@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { authService } from '@/lib/auth-service'
 
-export const Route = createFileRoute('/auth/callback')({
+export const Route = createFileRoute('/auth-callback')({
   component: AuthCallback,
 })
 
