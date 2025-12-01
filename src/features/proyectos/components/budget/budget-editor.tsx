@@ -28,7 +28,6 @@ import {
   Save,
   Trash2,
   GripVertical,
-  Calculator,
   FileText,
   ChevronDown,
   ChevronRight,
@@ -651,85 +650,83 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails }: BudgetEdi
       {/* Totals Section */}
       {sections.length > 0 && (
         <div className='space-y-4'>
-          <div className='flex items-center gap-2'>
-            <Calculator className='h-4 w-4 text-muted-foreground' />
-            <h3 className='text-sm font-medium'>Resumen</h3>
+          <div>
+            <h3 className='text-xl font-bold'>Resumen</h3>
+            <p className='text-sm text-muted-foreground'>Desglose de importes y totales</p>
           </div>
-          <div className='rounded-lg border bg-card p-4'>
-            <div className='space-y-4'>
-              {/* Section breakdown */}
-              <div className='space-y-2'>
-                {sections.map((section, index) => (
-                  <div key={section.id} className='flex items-center justify-between text-sm'>
-                    <span className='text-muted-foreground'>
-                      {index + 1}. {section.titulo || 'Sin nombre'}
-                    </span>
-                    <span className='font-mono'>{formatCurrency(getSectionTotal(section))}</span>
-                  </div>
-                ))}
-              </div>
-
-              <Separator />
-
-              {/* Subtotal */}
-              <div className='flex items-center justify-between'>
-                <span className='font-medium'>Subtotal</span>
-                <span className='font-mono text-lg'>
-                  {formatCurrency(calculations.subtotal)}
-                </span>
-              </div>
-
-              {/* Discount */}
-              <div className='flex items-center justify-between gap-4'>
-                <div className='flex items-center gap-2'>
-                  <span className='text-muted-foreground'>Descuento</span>
-                  <div className='flex items-center gap-1'>
-                    <Input
-                      type='number'
-                      value={discountRate}
-                      onChange={(e) => setDiscountRate(parseFloat(e.target.value) || 0)}
-                      className='h-8 w-16 text-right'
-                      min={0}
-                      max={100}
-                      step={0.5}
-                    />
-                    <Percent className='h-4 w-4 text-muted-foreground' />
-                  </div>
+          <div className='space-y-4'>
+            {/* Section breakdown */}
+            <div className='space-y-2'>
+              {sections.map((section, index) => (
+                <div key={section.id} className='flex items-center justify-between text-sm'>
+                  <span className='text-muted-foreground'>
+                    {index + 1}. {section.titulo || 'Sin nombre'}
+                  </span>
+                  <span className='font-mono'>{formatCurrency(getSectionTotal(section))}</span>
                 </div>
-                <span className='font-mono text-destructive'>
-                  -{formatCurrency(calculations.discount)}
-                </span>
-              </div>
+              ))}
+            </div>
 
-              {/* Tax */}
-              <div className='flex items-center justify-between gap-4'>
-                <div className='flex items-center gap-2'>
-                  <span className='text-muted-foreground'>IVA</span>
-                  <div className='flex items-center gap-1'>
-                    <Input
-                      type='number'
-                      value={taxRate}
-                      onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
-                      className='h-8 w-16 text-right'
-                      min={0}
-                      max={100}
-                      step={0.5}
-                    />
-                    <Percent className='h-4 w-4 text-muted-foreground' />
-                  </div>
+            <Separator />
+
+            {/* Subtotal */}
+            <div className='flex items-center justify-between'>
+              <span className='font-medium'>Subtotal</span>
+              <span className='font-mono text-lg'>
+                {formatCurrency(calculations.subtotal)}
+              </span>
+            </div>
+
+            {/* Discount */}
+            <div className='flex items-center justify-between gap-4'>
+              <div className='flex items-center gap-2'>
+                <span className='text-muted-foreground'>Descuento</span>
+                <div className='flex items-center gap-1'>
+                  <Input
+                    type='number'
+                    value={discountRate}
+                    onChange={(e) => setDiscountRate(parseFloat(e.target.value) || 0)}
+                    className='h-8 w-16 text-right'
+                    min={0}
+                    max={100}
+                    step={0.5}
+                  />
+                  <Percent className='h-4 w-4 text-muted-foreground' />
                 </div>
-                <span className='font-mono'>+{formatCurrency(calculations.tax)}</span>
               </div>
+              <span className='font-mono text-destructive'>
+                -{formatCurrency(calculations.discount)}
+              </span>
+            </div>
 
-              <Separator />
-
-              {/* Total */}
-              <div className='flex items-center justify-between'>
-                <span className='text-xl font-bold'>TOTAL</span>
-                <span className='text-2xl font-bold text-primary'>
-                  {formatCurrency(calculations.total)}
-                </span>
+            {/* Tax */}
+            <div className='flex items-center justify-between gap-4'>
+              <div className='flex items-center gap-2'>
+                <span className='text-muted-foreground'>IVA</span>
+                <div className='flex items-center gap-1'>
+                  <Input
+                    type='number'
+                    value={taxRate}
+                    onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
+                    className='h-8 w-16 text-right'
+                    min={0}
+                    max={100}
+                    step={0.5}
+                  />
+                  <Percent className='h-4 w-4 text-muted-foreground' />
+                </div>
               </div>
+              <span className='font-mono'>+{formatCurrency(calculations.tax)}</span>
+            </div>
+
+            <Separator />
+
+            {/* Total */}
+            <div className='flex items-center justify-between'>
+              <span className='text-xl font-bold'>TOTAL</span>
+              <span className='text-2xl font-bold text-primary'>
+                {formatCurrency(calculations.total)}
+              </span>
             </div>
           </div>
         </div>

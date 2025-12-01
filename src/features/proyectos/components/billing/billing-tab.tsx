@@ -1,10 +1,12 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useBlocker } from '@tanstack/react-router'
 import type { Project, Billing, HitoFacturacion } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import {
   Dialog,
   DialogContent,
@@ -62,11 +64,43 @@ export function BillingTab({ project }: BillingTabProps) {
   const [billingData, setBillingData] = useState<Billing | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+
+  // Store initial billing data to compare for changes
+  const initialBillingDataRef = useRef<string | null>(null)
 
   const [isTicketBaiModalOpen, setIsTicketBaiModalOpen] = useState(false)
   const [selectedMilestoneForTicketBai, setSelectedMilestoneForTicketBai] =
     useState<HitoFacturacion | null>(null)
   const [quickCreateInput, setQuickCreateInput] = useState('')
+
+  // Block navigation when there are unsaved changes
+  const { proceed, reset, status } = useBlocker({
+    shouldBlockFn: () => hasUnsavedChanges,
+    withResolver: true,
+  })
+
+  // Browser beforeunload event for closing tab/window
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault()
+        e.returnValue = ''
+        return ''
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [hasUnsavedChanges])
+
+  // Track changes by comparing current state to initial state
+  useEffect(() => {
+    if (billingData && initialBillingDataRef.current !== null) {
+      const currentData = JSON.stringify(billingData)
+      setHasUnsavedChanges(currentData !== initialBillingDataRef.current)
+    }
+  }, [billingData])
 
   // Get the approved budget from presupuestos
   const approvedBudget = useMemo(() => {
@@ -80,9 +114,13 @@ export function BillingTab({ project }: BillingTabProps) {
     try {
       const data = await getBillingByProjectId(project.id)
       setBillingData(data)
+      // Store initial state for change detection
+      initialBillingDataRef.current = JSON.stringify(data)
+      setHasUnsavedChanges(false)
     } catch (error) {
       console.error('Error fetching billing data:', error)
       setBillingData(null)
+      initialBillingDataRef.current = null
     } finally {
       setIsLoading(false)
     }
@@ -142,6 +180,9 @@ export function BillingTab({ project }: BillingTabProps) {
       }
       const createdBilling = await createBilling(newBillingData)
       setBillingData(createdBilling)
+      // Store initial state for change detection
+      initialBillingDataRef.current = JSON.stringify(createdBilling)
+      setHasUnsavedChanges(false)
       toast.success('Plan de Facturación creado correctamente.')
     } catch (error) {
       console.error('Error creating blank billing object:', error)
@@ -252,6 +293,9 @@ export function BillingTab({ project }: BillingTabProps) {
       setIsSaving(true)
       const savedBilling = await updateBilling(billingData)
       setBillingData(savedBilling)
+      // Update initial state to match saved state
+      initialBillingDataRef.current = JSON.stringify(savedBilling)
+      setHasUnsavedChanges(false)
       toast.success('Los hitos de facturación han sido guardados correctamente.')
     } catch (error) {
       console.error('Error saving billing data:', error)
@@ -345,19 +389,27 @@ export function BillingTab({ project }: BillingTabProps) {
           <p className='text-sm text-muted-foreground'>Gestión de hitos y cobros del proyecto</p>
         </div>
         {milestones.length > 0 && (
-          <Button
-            onClick={handleSaveChanges}
-            disabled={isSaving}
-            size='sm'
-            className='gap-2'
-          >
-            {isSaving ? (
-              <Loader2 className='h-4 w-4 animate-spin' />
-            ) : (
-              <Save className='h-4 w-4' />
+          <div className='flex items-center gap-2'>
+            {hasUnsavedChanges && (
+              <span className='text-sm text-amber-600 dark:text-amber-400'>
+                Cambios sin guardar
+              </span>
             )}
-            Guardar
-          </Button>
+            <Button
+              onClick={handleSaveChanges}
+              disabled={isSaving}
+              size='sm'
+              className='gap-2'
+              variant={hasUnsavedChanges ? 'default' : 'outline'}
+            >
+              {isSaving ? (
+                <Loader2 className='h-4 w-4 animate-spin' />
+              ) : (
+                <Save className='h-4 w-4' />
+              )}
+              Guardar
+            </Button>
+          </div>
         )}
       </div>
 
@@ -636,6 +688,18 @@ export function BillingTab({ project }: BillingTabProps) {
                 </Button>
               )}
             </div>
+
+            {/* Unsaved Changes Alert */}
+            {hasUnsavedChanges && (
+              <Alert className='border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100'>
+                <Info className='h-4 w-4' />
+                <AlertTitle>Cambios sin guardar</AlertTitle>
+                <AlertDescription>
+                  Has realizado cambios en la facturación. Recuerda hacer clic en "Guardar Cambios" para no perderlos.
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className='space-y-4'>
               {milestones.length > 0 ? (
                 <div className='space-y-3'>
@@ -771,6 +835,18 @@ export function BillingTab({ project }: BillingTabProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Unsaved Changes Warning Dialog */}
+      <ConfirmDialog
+        open={status === 'blocked'}
+        onOpenChange={(open) => !open && reset?.()}
+        title='Cambios sin guardar'
+        desc='Tienes cambios sin guardar en la facturación. Si sales ahora, perderás todos los cambios realizados.'
+        cancelBtnText='Quedarse'
+        confirmText='Salir sin guardar'
+        destructive
+        handleConfirm={() => proceed?.()}
+      />
     </div>
   )
 }
