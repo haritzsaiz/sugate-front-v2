@@ -26,11 +26,6 @@ interface BudgetPreviewProps {
     totalIva: number
     total: number
     totalConcepts: number
-    // Backward compatibility
-    subtotal: number
-    discount: number
-    taxableAmount: number
-    tax: number
   }
 }
 
@@ -61,7 +56,7 @@ export function BudgetPreview({
   calculations,
 }: BudgetPreviewProps) {
   const getSectionTotal = (section: BudgetSection) => {
-    return section.items.reduce((sum, item) => sum + item.precio, 0)
+    return section.items.reduce((sum, item) => sum + item.importe, 0)
   }
 
   const handlePrint = () => {
@@ -75,7 +70,7 @@ export function BudgetPreview({
     const sectionsHtml = sections.map((section, sectionIndex) => `
       <div style="margin-bottom: 24px;">
         <div style="margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; border-radius: 6px; background: #f3f4f6; padding: 12px 16px;">
-          <span style="font-weight: 600;">${sectionIndex + 1}. ${section.titulo || 'Sin nombre'}</span>
+          <span style="font-weight: 600;">${sectionIndex + 1}. ${section.concepto || 'Sin nombre'}</span>
           <span style="font-family: monospace; font-weight: 600;">${formatCurrency(getSectionTotal(section))}</span>
         </div>
         <table style="width: 100%; border-collapse: collapse;">
@@ -83,7 +78,7 @@ export function BudgetPreview({
             <tr style="border-bottom: 1px solid #e5e5e5;">
               <th style="padding: 8px 12px; text-align: left; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Nº</th>
               <th style="padding: 8px 12px; text-align: left; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Concepto</th>
-              <th style="padding: 8px 12px 8px 24px; text-align: left; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Ref.</th>
+              <th style="padding: 8px 12px; text-align: left; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Ref.</th>
               <th style="padding: 8px 12px; text-align: right; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Importe</th>
               <th style="padding: 8px 12px; text-align: right; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">Dto.</th>
               <th style="padding: 8px 12px; text-align: right; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 500;">IVA %</th>
@@ -92,14 +87,14 @@ export function BudgetPreview({
           </thead>
           <tbody>
             ${section.items.map((item, itemIndex) => {
-              const itemNeto = item.precio - (item.descuento || 0)
+              const itemNeto = item.importe - (item.descuento || 0)
               const itemIva = itemNeto * ((item.iva ?? 21) / 100)
               return `
               <tr style="border-bottom: 1px solid #f3f4f6;">
                 <td style="padding: 12px; font-family: monospace; font-size: 14px; color: #6b7280;">${sectionIndex + 1}.${itemIndex + 1}</td>
-                <td style="padding: 12px; font-size: 14px; word-wrap: break-word; max-width: 250px;">${item.titulo}</td>
-                <td style="padding: 12px 12px 12px 24px; font-size: 14px; color: #6b7280;">${item.referencia || '-'}</td>
-                <td style="padding: 12px; text-align: right; font-family: monospace; font-size: 14px; font-weight: 500;">${formatCurrency(item.precio)}</td>
+                <td style="padding: 12px; font-size: 14px; word-wrap: break-word; max-width: 250px;">${item.concepto}</td>
+                <td style="padding: 12px; font-size: 14px; color: #6b7280;">${item.referencia || '-'}</td>
+                <td style="padding: 12px; text-align: right; font-family: monospace; font-size: 14px; font-weight: 500;">${formatCurrency(item.importe)}</td>
                 <td style="padding: 12px; text-align: right; font-family: monospace; font-size: 14px;">${formatCurrency(item.descuento ?? 0)}</td>
                 <td style="padding: 12px; text-align: right; font-family: monospace; font-size: 14px;">${item.iva ?? 21}%</td>
                 <td style="padding: 12px; text-align: right; font-family: monospace; font-size: 14px; color: #6b7280;">${formatCurrency(itemIva)}</td>
@@ -311,7 +306,7 @@ export function BudgetPreview({
               <div key={section.id} className='mb-6'>
                 <div className='mb-2 flex items-center justify-between rounded-md bg-gray-100 px-4 py-3'>
                   <span className='font-semibold'>
-                    {sectionIndex + 1}. {section.titulo || 'Sin nombre'}
+                    {sectionIndex + 1}. {section.concepto || 'Sin nombre'}
                   </span>
                   <span className='font-mono font-semibold'>
                     {formatCurrency(getSectionTotal(section))}
@@ -322,7 +317,7 @@ export function BudgetPreview({
                     <tr className='border-b text-xs uppercase text-muted-foreground'>
                       <th className='py-2 text-left font-medium'>Nº</th>
                       <th className='py-2 text-left font-medium'>Concepto</th>
-                      <th className='py-2 pl-6 text-left font-medium'>Ref.</th>
+                      <th className='py-2 text-left font-medium'>Ref.</th>
                       <th className='py-2 text-right font-medium'>Importe</th>
                       <th className='py-2 text-right font-medium'>Dto.</th>
                       <th className='py-2 text-right font-medium'>IVA %</th>
@@ -331,17 +326,17 @@ export function BudgetPreview({
                   </thead>
                   <tbody>
                     {section.items.map((item, itemIndex) => {
-                      const itemNeto = item.precio - (item.descuento || 0)
+                      const itemNeto = item.importe - (item.descuento || 0)
                       const itemIva = itemNeto * ((item.iva ?? 21) / 100)
                       return (
                         <tr key={item.id} className='border-b border-gray-100'>
                           <td className='py-3 font-mono text-sm text-muted-foreground'>
                             {sectionIndex + 1}.{itemIndex + 1}
                           </td>
-                          <td className='py-3 text-sm max-w-xs break-words'>{item.titulo}</td>
-                          <td className='py-3 pl-6 text-sm text-muted-foreground'>{item.referencia || '-'}</td>
+                          <td className='py-3 text-sm max-w-xs break-words'>{item.concepto}</td>
+                          <td className='py-3 text-sm text-muted-foreground'>{item.referencia || '-'}</td>
                           <td className='py-3 text-right font-mono text-sm font-medium'>
-                            {formatCurrency(item.precio)}
+                            {formatCurrency(item.importe)}
                           </td>
                           <td className='py-3 text-right font-mono text-sm'>
                             {formatCurrency(item.descuento ?? 0)}

@@ -70,6 +70,7 @@ export function ProyectoForm() {
         direccion: data.direccion,
         ciudad: data.ciudad,
         oficina: data.oficina,
+        estado: 'presupuesto', // Initial state: Presupuestado
       })
       toast.success('Proyecto creado correctamente')
       navigate({ to: '/proyectos' })

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { type Project, type BudgetSection, type BudgetItem, type BudgetData } from '@/lib/types'
+import { type Project, type BudgetSection, type BudgetItem, type BudgetData, calculateBudgetTotals } from '@/lib/types'
 import { type Client } from '@/lib/client-service'
 import { getBillingByProjectId } from '@/lib/billing-service'
 import { Button } from '@/components/ui/button'
@@ -77,7 +77,6 @@ const formatCurrency = (value: number) => {
 export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBudget }: BudgetEditorProps) {
   const [sections, setSections] = useState<BudgetSection[]>([])
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
-  const [taxRate, setTaxRate] = useState(21) // iva_aplicado (default for new items)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [selectedBudgetId, setSelectedBudgetId] = useState<string | null>(null)
@@ -104,7 +103,6 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
         if (isNewBudget) {
           // Creating a new budget - start fresh
           setSections([])
-          setTaxRate(21)
           setExpandedSections(new Set())
         } else if (selectedBudgetId) {
           // Load the selected budget from presupuestos
@@ -120,7 +118,6 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
               })),
             }))
             setSections(sectionsWithIds)
-            setTaxRate(selectedBudget.iva_aplicado || 21)
             // Expand all sections by default
             setExpandedSections(new Set(sectionsWithIds.map(s => s.id)))
           }
@@ -131,20 +128,30 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
             : presupuestos[0]
           setSelectedBudgetId(budgetToSelect.id)
         } else {
-          // No presupuestos exist, try loading from billing service
-          const billing = await getBillingByProjectId(project.id)
-          if (billing?.presupuesto) {
-            const sectionsWithIds = (billing.presupuesto.secciones || []).map((section, sIdx) => ({
-              ...section,
-              id: section.id || `section-${sIdx}-${Date.now()}`,
-              items: (section.items || []).map((item, iIdx) => ({
-                ...item,
-                id: item.id || `item-${sIdx}-${iIdx}-${Date.now()}`,
-              })),
-            }))
-            setSections(sectionsWithIds)
-            setTaxRate(billing.presupuesto.iva_aplicado || 21)
-            setExpandedSections(new Set(sectionsWithIds.map(s => s.id)))
+          // No presupuestos exist - automatically enable new budget mode
+          setIsNewBudget(true)
+          setSections([])
+          setExpandedSections(new Set())
+          
+          // Try loading from billing service (legacy data migration)
+          // This is optional - don't show error if billing doesn't exist
+          try {
+            const billing = await getBillingByProjectId(project.id)
+            if (billing?.presupuesto) {
+              const sectionsWithIds = (billing.presupuesto.secciones || []).map((section, sIdx) => ({
+                ...section,
+                id: section.id || `section-${sIdx}-${Date.now()}`,
+                items: (section.items || []).map((item, iIdx) => ({
+                  ...item,
+                  id: item.id || `item-${sIdx}-${iIdx}-${Date.now()}`,
+                })),
+              }))
+              setSections(sectionsWithIds)
+              setExpandedSections(new Set(sectionsWithIds.map(s => s.id)))
+            }
+          } catch {
+            // Billing doesn't exist yet - this is normal for new projects
+            // Just continue with empty sections
           }
         }
       } catch (error) {
@@ -191,11 +198,11 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
     sections.forEach(section => {
       section.items.forEach(item => {
         const itemDescuento = item.descuento || 0 // Descuento es valor absoluto
-        const itemNeto = item.precio - itemDescuento
+        const itemNeto = item.importe - itemDescuento
         const itemIva = itemNeto * ((item.iva ?? 21) / 100)
         const ivaRate = item.iva ?? 21
         
-        subtotalBruto += item.precio
+        subtotalBruto += item.importe
         totalDescuentos += itemDescuento
         ivaByRate[ivaRate] = (ivaByRate[ivaRate] || 0) + itemIva
       })
@@ -213,15 +220,6 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
       ivaByRate,
       totalIva,
       total,
-      totalItems,
-      // Aliases for backward compatibility
-      total_sin_iva: subtotalNeto, 
-      discount: totalDescuentos, 
-      taxableAmount: subtotalNeto, 
-      iva_importe: totalIva, 
-      total_con_iva: total, 
-      subtotal: subtotalNeto,
-      tax: totalIva,
       totalConcepts: totalItems,
     }
   }, [sections])
@@ -244,7 +242,7 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
   const addSection = () => {
     const newSection: BudgetSection = {
       id: generateId(),
-      titulo: '',
+      concepto: '',
       items: [],
       subtotal: 0,
     }
@@ -258,7 +256,7 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
         if (section.id !== sectionId) return section
         const updated = { ...section, ...updates }
         // Recalculate subtotal when items change
-        updated.subtotal = updated.items.reduce((sum, item) => sum + item.precio, 0)
+        updated.subtotal = updated.items.reduce((sum, item) => sum + item.importe, 0)
         return updated
       })
     )
@@ -275,7 +273,7 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
       const newSection: BudgetSection = {
         ...section,
         id: generateId(),
-        titulo: `${section.titulo} (copia)`,
+        concepto: `${section.concepto} (copia)`,
         items: section.items.map((item) => ({ ...item, id: generateId() })),
       }
       setSections((prev) => [...prev, newSection])
@@ -287,11 +285,12 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
   const addItem = (sectionId: string) => {
     const newItem: BudgetItem = {
       id: generateId(),
-      titulo: '',
-      precio: 0,
+      concepto: '',
       referencia: '',
+      importe: 0,
       descuento: 0,
       iva: 21,
+      iva_importe: 0,
     }
     const section = sections.find((s) => s.id === sectionId)
     if (section) {
@@ -316,7 +315,7 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
         return {
           ...section,
           items: updatedItems,
-          subtotal: updatedItems.reduce((sum, item) => sum + item.precio, 0),
+          subtotal: updatedItems.reduce((sum, item) => sum + item.importe, 0),
         }
       })
     )
@@ -330,7 +329,7 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
         return {
           ...section,
           items: updatedItems,
-          subtotal: updatedItems.reduce((sum, item) => sum + item.precio, 0),
+          subtotal: updatedItems.reduce((sum, item) => sum + item.importe, 0),
         }
       })
     )
@@ -338,39 +337,41 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
 
   const handleSave = () => {
     // Validation
-    const emptySections = sections.filter((s) => !s.titulo.trim())
+    const emptySections = sections.filter((s) => !s.concepto.trim())
     if (emptySections.length > 0) {
       toast.error('Todas las secciones deben tener un nombre')
       return
     }
 
     const invalidItems = sections.some((s) =>
-      s.items.some((item) => !item.titulo.trim() || item.precio < 0)
+      s.items.some((item) => !item.concepto.trim() || item.importe < 0)
     )
     if (invalidItems) {
-      toast.error('Todos los items deben tener un título y un precio válido')
+      toast.error('Todos los items deben tener un concepto y un importe válido')
       return
     }
 
     // Build BudgetData object matching Go model
     const budgetData: BudgetData = {
       id: generateId(),
+      version: 1,
       created_at: new Date().toISOString(),
-      total_sin_iva: calculations.subtotalNeto,
-      iva_aplicado: taxRate,
-      iva_importe: calculations.totalIva,
-      total_con_iva: calculations.total,
       secciones: sections.map((section) => ({
         id: section.id,
-        titulo: section.titulo,
-        items: section.items.map((item) => ({
-          id: item.id,
-          titulo: item.titulo,
-          precio: item.precio,
-          referencia: item.referencia,
-          descuento: item.descuento,
-          iva: item.iva,
-        })),
+        concepto: section.concepto,
+        items: section.items.map((item) => {
+          const itemNeto = item.importe - (item.descuento || 0)
+          const itemIvaImporte = itemNeto * ((item.iva ?? 21) / 100)
+          return {
+            id: item.id,
+            concepto: item.concepto,
+            referencia: item.referencia || '',
+            importe: item.importe,
+            descuento: item.descuento,
+            iva: item.iva,
+            iva_importe: itemIvaImporte,
+          }
+        }),
         subtotal: section.subtotal,
       })),
     }
@@ -379,7 +380,7 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
   }
 
   const getSectionTotal = (section: BudgetSection) => {
-    return section.items.reduce((sum, item) => sum + item.precio, 0)
+    return section.items.reduce((sum, item) => sum + item.importe, 0)
   }
 
   // Copy sections from an existing budget
@@ -396,7 +397,6 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
         })),
       }))
       setSections(copiedSections)
-      setTaxRate(budgetToCopy.iva_aplicado || 21)
       setExpandedSections(new Set(copiedSections.map(s => s.id)))
       setBudgetToCopyId(null)
       toast.success(`Presupuesto copiado: ${formatDate(budgetToCopy.created_at)}`)
@@ -422,6 +422,11 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
             <h2 className='text-xl font-bold'>
               {isNewBudget ? 'Nuevo Presupuesto' : 'Presupuesto'}
             </h2>
+            {!isNewBudget && selectedBudgetId && (
+              <Badge variant='outline' className='font-mono text-xs'>
+                Versión {presupuestos.find(p => p.id === selectedBudgetId)?.version || 1}
+              </Badge>
+            )}
             {selectedBudgetId === approvedBudgetId && !isNewBudget && (
               <Badge variant='default' className='bg-green-600 text-xs'>
                 Aprobado
@@ -482,8 +487,11 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
               {presupuestos.map((budget) => (
                 <SelectItem key={budget.id} value={budget.id}>
                   <div className='flex items-center gap-2'>
+                    <Badge variant='outline' className='shrink-0 text-xs font-mono'>
+                      v{budget.version || 1}
+                    </Badge>
                     <span className='truncate'>
-                      {formatCurrency(budget.total_con_iva)} - {formatDate(budget.created_at)}
+                      {formatCurrency(calculateBudgetTotals(budget).total)} - {formatDate(budget.created_at)}
                     </span>
                     {budget.id === approvedBudgetId && (
                       <Badge variant='default' className='shrink-0 bg-green-600 text-xs'>
@@ -519,7 +527,7 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
         </div>
         <div className='rounded-lg border bg-card p-4 text-center'>
           <p className='text-2xl font-bold text-primary'>
-            {formatCurrency(calculations.subtotal)}
+            {formatCurrency(calculations.subtotalNeto)}
           </p>
           <p className='text-xs text-muted-foreground'>Subtotal</p>
         </div>
@@ -574,11 +582,14 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
                         {presupuestos.map((budget) => (
                           <SelectItem key={budget.id} value={budget.id}>
                             <div className='flex items-center gap-2'>
+                              <Badge variant='outline' className='shrink-0 text-xs font-mono'>
+                                v{budget.version || 1}
+                              </Badge>
                               {budget.id === approvedBudgetId && (
                                 <CheckCircle className='h-3 w-3 text-green-600' />
                               )}
                               <span className='text-xs'>
-                                {formatCurrency(budget.total_con_iva)} - {formatDate(budget.created_at)}
+                                {formatCurrency(calculateBudgetTotals(budget).total)} - {formatDate(budget.created_at)}
                               </span>
                             </div>
                           </SelectItem>
@@ -655,12 +666,12 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
 
                   {isReadOnly ? (
                     <span className='h-8 flex-1 font-medium flex items-center'>
-                      {section.titulo || 'Sin nombre'}
+                      {section.concepto || 'Sin nombre'}
                     </span>
                   ) : (
                     <Input
-                      value={section.titulo}
-                      onChange={(e) => updateSection(section.id, { titulo: e.target.value })}
+                      value={section.concepto}
+                      onChange={(e) => updateSection(section.id, { concepto: e.target.value })}
                       placeholder='Nombre de la sección...'
                       className='h-8 flex-1 border-none bg-transparent font-medium shadow-none focus-visible:ring-0'
                     />
@@ -706,8 +717,8 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
                       <TableHeader>
                         <TableRow className='hover:bg-transparent'>
                           <TableHead className='w-12'></TableHead>
-                          <TableHead className='min-w-[150px] max-w-[300px]'>Concepto</TableHead>
-                          <TableHead className='w-48'>Referencia</TableHead>
+                          <TableHead className='min-w-[200px]'>Concepto</TableHead>
+                          <TableHead className='w-32'>Referencia</TableHead>
                           <TableHead className='w-24 text-right'>Importe</TableHead>
                           <TableHead className='w-24 text-right'>Dto.</TableHead>
                           <TableHead className='w-16 text-right'>IVA %</TableHead>
@@ -734,18 +745,19 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
                               </TableCell>
                               <TableCell>
                                 {isReadOnly ? (
-                                  <span className='text-sm whitespace-pre-wrap break-words'>{item.titulo}</span>
+                                  <span className='text-sm whitespace-pre-wrap break-words'>{item.concepto}</span>
                                 ) : (
                                   <Textarea
-                                    value={item.titulo}
+                                    value={item.concepto}
                                     onChange={(e) =>
                                       updateItem(section.id, item.id, {
-                                        titulo: e.target.value,
+                                        concepto: e.target.value,
                                       })
                                     }
                                     placeholder='Concepto...'
                                     className='min-h-[32px] resize-none border-none bg-transparent shadow-none focus-visible:bg-background focus-visible:ring-1'
                                     rows={1}
+                                    tabIndex={0}
                                     onInput={(e) => {
                                       const target = e.target as HTMLTextAreaElement
                                       target.style.height = 'auto'
@@ -767,18 +779,19 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
                                     }
                                     placeholder='Ref...'
                                     className='h-8 border-none bg-transparent shadow-none focus-visible:bg-background focus-visible:ring-1'
+                                    tabIndex={0}
                                   />
                                 )}
                               </TableCell>
                               <TableCell className='text-right'>
                                 {isReadOnly ? (
-                                  <span className='text-sm font-mono'>{formatCurrency(item.precio)}</span>
+                                  <span className='text-sm font-mono'>{formatCurrency(item.importe)}</span>
                                 ) : (
                                   <CurrencyInput
-                                    value={item.precio}
+                                    value={item.importe}
                                     onChange={(value) =>
                                       updateItem(section.id, item.id, {
-                                        precio: value,
+                                        importe: value,
                                       })
                                     }
                                     className='h-8 w-24 border-none bg-transparent shadow-none focus-visible:bg-background focus-visible:ring-1'
@@ -820,7 +833,7 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
                               </TableCell>
                               <TableCell className='text-right'>
                                 <span className='text-sm font-mono text-muted-foreground'>
-                                  {formatCurrency((item.precio - (item.descuento || 0)) * ((item.iva ?? 21) / 100))}
+                                  {formatCurrency((item.importe - (item.descuento || 0)) * ((item.iva ?? 21) / 100))}
                                 </span>
                               </TableCell>
                               {!isReadOnly && (
@@ -890,7 +903,7 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
               {sections.map((section, index) => (
                 <div key={section.id} className='flex items-center justify-between text-sm'>
                   <span className='text-muted-foreground'>
-                    {index + 1}. {section.titulo || 'Sin nombre'}
+                    {index + 1}. {section.concepto || 'Sin nombre'}
                   </span>
                   <span className='font-mono'>{formatCurrency(getSectionTotal(section))}</span>
                 </div>

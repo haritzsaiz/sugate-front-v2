@@ -11,6 +11,7 @@ import { getAllProjects } from '@/lib/project-service'
 import { getAllClients } from '@/lib/client-service'
 import * as BillingService from '@/lib/billing-service'
 import type { Project, Billing } from '@/lib/types'
+import { calculateBudgetTotals } from '@/lib/types'
 import type { Client } from '@/lib/client-service'
 import type { FinancialRecord } from './data/schema'
 import { FinanzasTable, type FinanzasTableRef } from './components/finanzas-table'
@@ -27,7 +28,11 @@ function computeFinancialRecord(
   const approvedBudget = project.budget_id_aprobado
     ? project.presupuestos?.find((b) => b.id === project.budget_id_aprobado)
     : undefined
-  const totalBudget = billing?.presupuesto?.total_con_iva ?? approvedBudget?.total_con_iva ?? 0
+  
+  // Calculate totals from budget sections
+  const billingTotals = calculateBudgetTotals(billing?.presupuesto)
+  const approvedBudgetTotals = calculateBudgetTotals(approvedBudget)
+  const totalBudget = billingTotals.total || approvedBudgetTotals.total || 0
 
   // Calculate amounts from billing milestones
   let paymentsReceived = 0 // cobrado
@@ -118,9 +123,11 @@ export function Finanzas() {
         })
       }
 
-      // Fetch billing for each project
+      // Fetch billing only for projects with an approved budget
       const billingPromises = filteredProjects.map((project) =>
-        BillingService.getBillingByProjectId(project.id).catch(() => null)
+        project.budget_id_aprobado
+          ? BillingService.getBillingByProjectId(project.id).catch(() => null)
+          : Promise.resolve(null)
       )
       const billings = await Promise.all(billingPromises)
 

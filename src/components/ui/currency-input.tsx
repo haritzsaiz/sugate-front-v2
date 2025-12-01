@@ -18,6 +18,16 @@ const formatCurrency = (value: number, locale: string, currency: string) => {
   }).format(value)
 }
 
+// Regex to validate currency input: allows digits, comma or dot as decimal separator, up to 2 decimal places
+const currencyRegex = /^-?\d*([.,]\d{0,2})?$/
+
+const parseLocaleNumber = (value: string): number => {
+  // Replace comma with dot for parsing
+  const normalized = value.replace(',', '.')
+  const parsed = parseFloat(normalized)
+  return isNaN(parsed) ? 0 : parsed
+}
+
 const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
   ({ className, value, onChange, currency = 'EUR', locale = 'es-ES', ...props }, ref) => {
     const [isFocused, setIsFocused] = React.useState(false)
@@ -42,22 +52,23 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
 
     const handleBlur = () => {
       setIsFocused(false)
-      const parsed = parseFloat(inputValue)
-      if (!isNaN(parsed)) {
-        onChange(parsed)
-      } else {
-        setInputValue(value.toString())
-      }
+      const parsed = parseLocaleNumber(inputValue)
+      onChange(parsed)
+      setInputValue(parsed.toString())
     }
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const newValue = e.target.value
-      setInputValue(newValue)
       
-      // Update parent on valid input
-      const parsed = parseFloat(newValue)
-      if (!isNaN(parsed)) {
-        onChange(parsed)
+      // Allow empty string or values matching the currency regex
+      if (newValue === '' || currencyRegex.test(newValue)) {
+        setInputValue(newValue)
+        
+        // Update parent on valid numeric input
+        const parsed = parseLocaleNumber(newValue)
+        if (newValue !== '' && newValue !== '-') {
+          onChange(parsed)
+        }
       }
     }
 
@@ -75,15 +86,33 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
       }, 0)
     }
 
+    const handleDisplayKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+      // Enter or Space activates the input
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        handleDisplayClick()
+      }
+    }
+
+    const handleDisplayFocus = () => {
+      // When the display div receives focus (via tab), immediately switch to input mode
+      handleDisplayClick()
+    }
+
     if (!isFocused) {
-      // Show formatted display
+      // Show formatted display - make it focusable for tab navigation
       return (
         <div
           className={cn(
-            'flex h-8 items-center justify-end px-3 cursor-text font-mono text-sm rounded-md hover:bg-muted/50 transition-colors',
+            'flex h-8 items-center justify-end px-3 cursor-text font-mono text-sm rounded-md hover:bg-muted/50 transition-colors focus:outline-none focus:ring-1 focus:ring-ring',
             className
           )}
           onClick={handleDisplayClick}
+          onKeyDown={handleDisplayKeyDown}
+          onFocus={handleDisplayFocus}
+          tabIndex={0}
+          role="button"
+          aria-label={`${formatCurrency(value, locale, currency)}, click to edit`}
         >
           {formatCurrency(value, locale, currency)}
         </div>
@@ -93,7 +122,8 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
     // Show input when focused
     return (
       <input
-        type='number'
+        type='text'
+        inputMode='decimal'
         ref={(node) => {
           (inputRef as React.MutableRefObject<HTMLInputElement | null>).current = node
           if (typeof ref === 'function') {
@@ -114,8 +144,6 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
           'disabled:cursor-not-allowed disabled:opacity-50',
           className
         )}
-        min={0}
-        step={0.01}
         {...props}
       />
     )

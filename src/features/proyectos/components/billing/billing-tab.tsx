@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useBlocker } from '@tanstack/react-router'
-import type { Project, Billing, HitoFacturacion } from '@/lib/types'
+import type { Project, Billing, HitoFacturacion, BudgetData } from '@/lib/types'
+import { calculateBudgetTotals } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -104,13 +105,25 @@ export function BillingTab({ project }: BillingTabProps) {
   }, [billingData, isInitialized])
 
   // Get the approved budget from presupuestos
-  const approvedBudget = useMemo(() => {
+  const approvedBudget = useMemo((): BudgetData | null => {
     if (!project.budget_id_aprobado) return null
     return project.presupuestos?.find((b) => b.id === project.budget_id_aprobado) || null
   }, [project.budget_id_aprobado, project.presupuestos])
 
+  // Calculate the budget total from sections
+  const approvedBudgetTotal = useMemo(() => {
+    return calculateBudgetTotals(approvedBudget).total
+  }, [approvedBudget])
+
   const fetchBillingData = useCallback(async () => {
-    if (!project.id) return
+    // Don't fetch billing data if no budget is approved
+    if (!project.id || !project.budget_id_aprobado) {
+      setBillingData(null)
+      initialBillingDataRef.current = null
+      setIsInitialized(true)
+      setIsLoading(false)
+      return
+    }
     setIsLoading(true)
     try {
       const data = await getBillingByProjectId(project.id)
@@ -127,7 +140,7 @@ export function BillingTab({ project }: BillingTabProps) {
     } finally {
       setIsLoading(false)
     }
-  }, [project.id])
+  }, [project.id, project.budget_id_aprobado])
 
   useEffect(() => {
     fetchBillingData()
@@ -136,7 +149,7 @@ export function BillingTab({ project }: BillingTabProps) {
   const milestones = billingData?.hitos_facturacion || []
 
   const financialSummary = useMemo(() => {
-    const total = approvedBudget?.total_con_iva || 0
+    const total = approvedBudgetTotal
 
     const paid = milestones
       .filter((m) => m.estado === 'cobrado')
@@ -152,7 +165,7 @@ export function BillingTab({ project }: BillingTabProps) {
     const unassigned = total - totalAssigned
 
     return { total, paid, outstanding, pendingInvoice, totalAssigned, unassigned }
-  }, [approvedBudget, milestones])
+  }, [approvedBudgetTotal, milestones])
 
   const handleUpdateMilestone = useCallback(
     (updatedMilestone: HitoFacturacion) => {
@@ -222,7 +235,7 @@ export function BillingTab({ project }: BillingTabProps) {
       toast.error('Debes aprobar un presupuesto para añadir un hito.')
       return
     }
-    const budgetTotal = approvedBudget?.total_con_iva || 0
+    const budgetTotal = approvedBudgetTotal
     if (budgetTotal <= 0) {
       toast.error('No se pueden crear hitos por porcentaje si el presupuesto es 0.')
       return
@@ -278,7 +291,7 @@ export function BillingTab({ project }: BillingTabProps) {
     if (!billingData) return
 
     const totalAssigned = milestones.reduce((sum, m) => sum + m.total, 0)
-    const budgetTotal = approvedBudget?.total_con_iva || 0
+    const budgetTotal = approvedBudgetTotal
 
     if (totalAssigned > budgetTotal + 0.01) {
       toast.error(
@@ -710,7 +723,7 @@ export function BillingTab({ project }: BillingTabProps) {
                     <BillingMilestoneItem
                       key={milestone.id}
                       milestone={milestone}
-                      budgetTotal={approvedBudget?.total_con_iva || 0}
+                      budgetTotal={approvedBudgetTotal}
                       onUpdate={handleUpdateMilestone}
                       onDelete={handleDeleteMilestone}
                       onTicketBai={handleOpenTicketBaiModal}

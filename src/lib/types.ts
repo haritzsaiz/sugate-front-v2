@@ -56,6 +56,7 @@ export interface CreateProjectData {
   direccion: string;
   ciudad: string;
   oficina?: string;
+  estado?: ProjectStatus; // Initial state, defaults to 'presupuesto'
 }
 
 export type UpdateProjectData = Project;
@@ -82,18 +83,19 @@ export interface Oficina {
 
 export interface BudgetItem {
   // Mapped from Go's BudgetItem
-  titulo: string;
-  referencia?: string;
-  precio: number; // Importe base
-  descuento?: number; // Porcentaje de descuento (0-100)
-  iva?: number; // Porcentaje de IVA (0, 4, 10, 21, etc.)
+  concepto: string; // JSON: "concepto"
+  referencia: string; // Reference code
+  importe: number; // Base amount
+  descuento: number; // Discount amount (absolute value)
+  iva: number; // IVA percentage (0, 4, 10, 21, etc.)
+  iva_importe: number; // IVA amount calculated
   // UI-only properties
   id: string;
 }
 
 export interface BudgetSection {
   // Mapped from Go's BudgetSection
-  titulo: string;
+  concepto: string; // JSON: "concepto" (section title)
   items: BudgetItem[];
   subtotal: number;
   // UI-only properties
@@ -103,12 +105,39 @@ export interface BudgetSection {
 export interface BudgetData {
   // Mapped from Go's Budget
   id: string;
+  version: number;
   created_at: string;
-  total_sin_iva: number;
-  iva_aplicado: number; // VAT percentage
-  iva_importe: number; // VAT amount
-  total_con_iva: number;
   secciones: BudgetSection[];
+}
+
+// Helper function to calculate budget totals from sections
+export function calculateBudgetTotals(budget: BudgetData | null | undefined): {
+  subtotalBruto: number;
+  totalDescuentos: number;
+  subtotalNeto: number;
+  totalIva: number;
+  total: number;
+} {
+  if (!budget || !budget.secciones) {
+    return { subtotalBruto: 0, totalDescuentos: 0, subtotalNeto: 0, totalIva: 0, total: 0 };
+  }
+
+  let subtotalBruto = 0;
+  let totalDescuentos = 0;
+  let totalIva = 0;
+
+  budget.secciones.forEach(section => {
+    section.items.forEach(item => {
+      subtotalBruto += item.importe;
+      totalDescuentos += item.descuento || 0;
+      totalIva += item.iva_importe || 0;
+    });
+  });
+
+  const subtotalNeto = subtotalBruto - totalDescuentos;
+  const total = subtotalNeto + totalIva;
+
+  return { subtotalBruto, totalDescuentos, subtotalNeto, totalIva, total };
 }
 
 // Billing Types - Mapped from Go backend models
