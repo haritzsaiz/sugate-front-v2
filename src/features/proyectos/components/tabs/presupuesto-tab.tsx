@@ -27,6 +27,19 @@ export function PresupuestoTab() {
           toast.error('Error al guardar el presupuesto')
         }
       }}
+      onApproveBudget={async (budgetId: string) => {
+        try {
+          const updatedProject = { ...proyecto, budget_id_aprobado: budgetId }
+          const savedProject = await updateProject(updatedProject)
+          onProjectUpdate(savedProject)
+          
+          console.log('Budget approved:', budgetId)
+          toast.success('Presupuesto aprobado correctamente')
+        } catch (error) {
+          console.error('Error approving budget:', error)
+          toast.error('Error al aprobar el presupuesto')
+        }
+      }}
     />
   )
 }

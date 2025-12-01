@@ -58,6 +58,7 @@ interface BudgetEditorProps {
   project: Project
   client: Client | null
   onSaveBudgetDetails: (budgetData: BudgetData) => void
+  onApproveBudget?: (budgetId: string) => void
 }
 
 const generateId = () => `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
@@ -72,7 +73,7 @@ const formatCurrency = (value: number) => {
   }).format(value)
 }
 
-export function BudgetEditor({ project, client, onSaveBudgetDetails }: BudgetEditorProps) {
+export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBudget }: BudgetEditorProps) {
   const [sections, setSections] = useState<BudgetSection[]>([])
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
   const [taxRate, setTaxRate] = useState(21) // iva_aplicado
@@ -81,6 +82,7 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails }: BudgetEdi
   const [isLoading, setIsLoading] = useState(true)
   const [selectedBudgetId, setSelectedBudgetId] = useState<string | null>(null)
   const [isNewBudget, setIsNewBudget] = useState(false)
+  const [budgetToCopyId, setBudgetToCopyId] = useState<string | null>(null)
 
   // Get the list of presupuestos from the project
   const presupuestos = project.presupuestos || []
@@ -156,6 +158,8 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails }: BudgetEdi
       year: 'numeric',
       month: 'short',
       day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     }).format(new Date(dateString))
   }
 
@@ -343,6 +347,27 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails }: BudgetEdi
     return section.items.reduce((sum, item) => sum + item.precio, 0)
   }
 
+  // Copy sections from an existing budget
+  const copyFromBudget = (budgetId: string) => {
+    const budgetToCopy = presupuestos.find(p => p.id === budgetId)
+    if (budgetToCopy) {
+      // Deep copy sections with new IDs
+      const copiedSections = (budgetToCopy.secciones || []).map((section) => ({
+        ...section,
+        id: generateId(),
+        items: section.items.map((item) => ({
+          ...item,
+          id: generateId(),
+        })),
+      }))
+      setSections(copiedSections)
+      setTaxRate(budgetToCopy.iva_aplicado || 21)
+      setExpandedSections(new Set(copiedSections.map(s => s.id)))
+      setBudgetToCopyId(null)
+      toast.success(`Presupuesto copiado: ${formatDate(budgetToCopy.created_at)}`)
+    }
+  }
+
   // Show loading state while fetching data
   if (isLoading) {
     return (
@@ -381,6 +406,18 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails }: BudgetEdi
             >
               <Eye className='h-4 w-4' />
               Vista Previa
+            </Button>
+          )}
+          {/* Approve Budget Button - only show for saved budgets that are not already approved */}
+          {selectedBudgetId && !isNewBudget && selectedBudgetId !== approvedBudgetId && onApproveBudget && (
+            <Button
+              onClick={() => onApproveBudget(selectedBudgetId)}
+              size='sm'
+              variant='outline'
+              className='gap-2 border-green-600 text-green-600 hover:bg-green-50 hover:text-green-700'
+            >
+              <CheckCircle className='h-4 w-4' />
+              Aprobar Presupuesto
             </Button>
           )}
           <Button
@@ -461,7 +498,89 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails }: BudgetEdi
       </div>
 
       {/* Empty State */}
-      {sections.length === 0 && (
+      {sections.length === 0 && isNewBudget && (
+        <Card className='border-dashed'>
+          <CardContent className='flex flex-col items-center justify-center py-16'>
+            <div className='mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted'>
+              <FileText className='h-8 w-8 text-muted-foreground' />
+            </div>
+            <h3 className='mb-2 text-lg font-semibold'>Nuevo Presupuesto</h3>
+            
+            {presupuestos.length > 0 ? (
+              <>
+                <p className='mb-6 max-w-md text-center text-sm text-muted-foreground'>
+                  Puedes empezar desde cero o copiar un presupuesto existente como base.
+                </p>
+                <div className='flex flex-col sm:flex-row gap-4 w-full max-w-lg'>
+                  {/* Start from scratch */}
+                  <div className='flex-1 rounded-lg border bg-card p-6 text-center hover:border-primary transition-colors'>
+                    <div className='mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mx-auto'>
+                      <Plus className='h-6 w-6 text-primary' />
+                    </div>
+                    <h4 className='font-medium mb-2'>Empezar desde cero</h4>
+                    <p className='text-xs text-muted-foreground mb-4'>Crear un presupuesto vacío</p>
+                    <Button onClick={addSection} className='w-full gap-2' size='sm'>
+                      <Plus className='h-4 w-4' />
+                      Añadir sección
+                    </Button>
+                  </div>
+                  
+                  {/* Copy from existing */}
+                  <div className='flex-1 rounded-lg border bg-card p-6 text-center hover:border-primary transition-colors'>
+                    <div className='mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 mx-auto'>
+                      <Copy className='h-6 w-6 text-blue-600' />
+                    </div>
+                    <h4 className='font-medium mb-2'>Copiar existente</h4>
+                    <p className='text-xs text-muted-foreground mb-4'>Partir de un presupuesto anterior</p>
+                    <Select value={budgetToCopyId || ''} onValueChange={(value) => setBudgetToCopyId(value)}>
+                      <SelectTrigger className='w-full mb-2'>
+                        <SelectValue placeholder='Seleccionar...' />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {presupuestos.map((budget) => (
+                          <SelectItem key={budget.id} value={budget.id}>
+                            <div className='flex items-center gap-2'>
+                              {budget.id === approvedBudgetId && (
+                                <CheckCircle className='h-3 w-3 text-green-600' />
+                              )}
+                              <span className='text-xs'>
+                                {formatCurrency(budget.total_con_iva)} - {formatDate(budget.created_at)}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      onClick={() => budgetToCopyId && copyFromBudget(budgetToCopyId)} 
+                      disabled={!budgetToCopyId}
+                      variant='outline'
+                      className='w-full gap-2' 
+                      size='sm'
+                    >
+                      <Copy className='h-4 w-4' />
+                      Copiar
+                    </Button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className='mb-6 max-w-sm text-center text-sm text-muted-foreground'>
+                  Comienza añadiendo una sección para organizar los conceptos del presupuesto.
+                </p>
+                <Button onClick={addSection} className='gap-2'>
+                  <Plus className='h-4 w-4' />
+                  Añadir primera sección
+                </Button>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Empty State for existing budgets */}
+      {sections.length === 0 && !isNewBudget && (
         <Card className='border-dashed'>
           <CardContent className='flex flex-col items-center justify-center py-16'>
             <div className='mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted'>
