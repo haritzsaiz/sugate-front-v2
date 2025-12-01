@@ -200,6 +200,9 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
     }
   }, [sections, taxRate, discountRate])
 
+  // Determine if the budget is read-only (existing budgets cannot be edited)
+  const isReadOnly = !isNewBudget
+
   const toggleSection = (sectionId: string) => {
     setExpandedSections((prev) => {
       const next = new Set(prev)
@@ -420,14 +423,17 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
               Aprobar Presupuesto
             </Button>
           )}
-          <Button
-            onClick={handleSave}
-            size='sm'
-            className='gap-2'
-          >
-            <Save className='h-4 w-4' />
-            Guardar
-          </Button>
+          {/* Save button - only show for new budgets */}
+          {!isReadOnly && (
+            <Button
+              onClick={handleSave}
+              size='sm'
+              className='gap-2'
+            >
+              <Save className='h-4 w-4' />
+              Guardar
+            </Button>
+          )}
         </div>
       </div>
 
@@ -579,21 +585,17 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
         </Card>
       )}
 
-      {/* Empty State for existing budgets */}
+      {/* Empty State for existing budgets (read-only) */}
       {sections.length === 0 && !isNewBudget && (
         <Card className='border-dashed'>
           <CardContent className='flex flex-col items-center justify-center py-16'>
             <div className='mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted'>
               <FileText className='h-8 w-8 text-muted-foreground' />
             </div>
-            <h3 className='mb-2 text-lg font-semibold'>Sin secciones</h3>
-            <p className='mb-6 max-w-sm text-center text-sm text-muted-foreground'>
-              Comienza añadiendo una sección para organizar los conceptos del presupuesto.
+            <h3 className='mb-2 text-lg font-semibold'>Presupuesto vacío</h3>
+            <p className='max-w-sm text-center text-sm text-muted-foreground'>
+              Este presupuesto no tiene secciones definidas.
             </p>
-            <Button onClick={addSection} className='gap-2'>
-              <Plus className='h-4 w-4' />
-              Añadir primera sección
-            </Button>
           </CardContent>
         </Card>
       )}
@@ -623,12 +625,18 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
                     {sectionIndex + 1}
                   </Badge>
 
-                  <Input
-                    value={section.titulo}
-                    onChange={(e) => updateSection(section.id, { titulo: e.target.value })}
-                    placeholder='Nombre de la sección...'
-                    className='h-8 flex-1 border-none bg-transparent font-medium shadow-none focus-visible:ring-0'
-                  />
+                  {isReadOnly ? (
+                    <span className='h-8 flex-1 font-medium flex items-center'>
+                      {section.titulo || 'Sin nombre'}
+                    </span>
+                  ) : (
+                    <Input
+                      value={section.titulo}
+                      onChange={(e) => updateSection(section.id, { titulo: e.target.value })}
+                      placeholder='Nombre de la sección...'
+                      className='h-8 flex-1 border-none bg-transparent font-medium shadow-none focus-visible:ring-0'
+                    />
+                  )}
 
                   <div className='flex items-center gap-2'>
                     <Badge variant='secondary' className='font-mono'>
@@ -638,27 +646,29 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
                       {formatCurrency(sectionTotal)}
                     </Badge>
 
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant='ghost' size='icon' className='h-8 w-8'>
-                          <MoreHorizontal className='h-4 w-4' />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align='end'>
-                        <DropdownMenuItem onClick={() => duplicateSection(section.id)}>
-                          <Copy className='mr-2 h-4 w-4' />
-                          Duplicar sección
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className='text-destructive'
-                          onClick={() => deleteSection(section.id)}
-                        >
-                          <Trash2 className='mr-2 h-4 w-4' />
-                          Eliminar sección
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    {!isReadOnly && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant='ghost' size='icon' className='h-8 w-8'>
+                            <MoreHorizontal className='h-4 w-4' />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align='end'>
+                          <DropdownMenuItem onClick={() => duplicateSection(section.id)}>
+                            <Copy className='mr-2 h-4 w-4' />
+                            Duplicar sección
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className='text-destructive'
+                            onClick={() => deleteSection(section.id)}
+                          >
+                            <Trash2 className='mr-2 h-4 w-4' />
+                            Eliminar sección
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
                 </div>
 
@@ -670,15 +680,15 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
                           <TableHead className='w-12'></TableHead>
                           <TableHead className='min-w-[200px]'>Título</TableHead>
                           <TableHead className='w-32 text-right'>Precio</TableHead>
-                          <TableHead className='w-12'></TableHead>
+                          {!isReadOnly && <TableHead className='w-12'></TableHead>}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {section.items.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={4} className='h-24 text-center'>
+                            <TableCell colSpan={isReadOnly ? 3 : 4} className='h-24 text-center'>
                               <p className='text-sm text-muted-foreground'>
-                                Sin items. Añade el primero.
+                                {isReadOnly ? 'Sin items en esta sección.' : 'Sin items. Añade el primero.'}
                               </p>
                             </TableCell>
                           </TableRow>
@@ -691,60 +701,72 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
                                 </span>
                               </TableCell>
                               <TableCell>
-                                <Input
-                                  value={item.titulo}
-                                  onChange={(e) =>
-                                    updateItem(section.id, item.id, {
-                                      titulo: e.target.value,
-                                    })
-                                  }
-                                  placeholder='Título del item...'
-                                  className='h-8 border-none bg-transparent shadow-none focus-visible:bg-background focus-visible:ring-1'
-                                />
+                                {isReadOnly ? (
+                                  <span className='text-sm'>{item.titulo}</span>
+                                ) : (
+                                  <Input
+                                    value={item.titulo}
+                                    onChange={(e) =>
+                                      updateItem(section.id, item.id, {
+                                        titulo: e.target.value,
+                                      })
+                                    }
+                                    placeholder='Título del item...'
+                                    className='h-8 border-none bg-transparent shadow-none focus-visible:bg-background focus-visible:ring-1'
+                                  />
+                                )}
                               </TableCell>
-                              <TableCell>
-                                <Input
-                                  type='number'
-                                  value={item.precio}
-                                  onChange={(e) =>
-                                    updateItem(section.id, item.id, {
-                                      precio: parseFloat(e.target.value) || 0,
-                                    })
-                                  }
-                                  className='h-8 border-none bg-transparent text-right shadow-none focus-visible:bg-background focus-visible:ring-1'
-                                  min={0}
-                                  step={0.01}
-                                />
+                              <TableCell className='text-right'>
+                                {isReadOnly ? (
+                                  <span className='text-sm font-mono'>{formatCurrency(item.precio)}</span>
+                                ) : (
+                                  <Input
+                                    type='number'
+                                    value={item.precio}
+                                    onChange={(e) =>
+                                      updateItem(section.id, item.id, {
+                                        precio: parseFloat(e.target.value) || 0,
+                                      })
+                                    }
+                                    className='h-8 border-none bg-transparent text-right shadow-none focus-visible:bg-background focus-visible:ring-1'
+                                    min={0}
+                                    step={0.01}
+                                  />
+                                )}
                               </TableCell>
-                              <TableCell>
-                                <Button
-                                  variant='ghost'
-                                  size='icon'
-                                  className='h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100'
-                                  onClick={() => deleteItem(section.id, item.id)}
-                                >
-                                  <Trash2 className='h-4 w-4 text-destructive' />
-                                </Button>
-                              </TableCell>
+                              {!isReadOnly && (
+                                <TableCell>
+                                  <Button
+                                    variant='ghost'
+                                    size='icon'
+                                    className='h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100'
+                                    onClick={() => deleteItem(section.id, item.id)}
+                                  >
+                                    <Trash2 className='h-4 w-4 text-destructive' />
+                                  </Button>
+                                </TableCell>
+                              )}
                             </TableRow>
                           ))
                         )}
                       </TableBody>
-                      <TableFooter>
-                        <TableRow>
-                          <TableCell colSpan={4} className='p-2'>
-                            <Button
-                              variant='ghost'
-                              size='sm'
-                              className='w-full gap-2 border border-dashed'
-                              onClick={() => addItem(section.id)}
-                            >
-                              <Plus className='h-4 w-4' />
-                              Añadir item
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      </TableFooter>
+                      {!isReadOnly && (
+                        <TableFooter>
+                          <TableRow>
+                            <TableCell colSpan={4} className='p-2'>
+                              <Button
+                                variant='ghost'
+                                size='sm'
+                                className='w-full gap-2 border border-dashed'
+                                onClick={() => addItem(section.id)}
+                              >
+                                <Plus className='h-4 w-4' />
+                                Añadir item
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        </TableFooter>
+                      )}
                     </Table>
                   </div>
                 </CollapsibleContent>
@@ -754,8 +776,8 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
         })}
       </div>
 
-      {/* Add Section Button */}
-      {sections.length > 0 && (
+      {/* Add Section Button - only for new budgets */}
+      {sections.length > 0 && !isReadOnly && (
         <Button
           variant='outline'
           className='w-full gap-2 border-dashed'
@@ -801,15 +823,19 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
               <div className='flex items-center gap-2'>
                 <span className='text-muted-foreground'>Descuento</span>
                 <div className='flex items-center gap-1'>
-                  <Input
-                    type='number'
-                    value={discountRate}
-                    onChange={(e) => setDiscountRate(parseFloat(e.target.value) || 0)}
-                    className='h-8 w-16 text-right'
-                    min={0}
-                    max={100}
-                    step={0.5}
-                  />
+                  {isReadOnly ? (
+                    <span className='font-mono'>{discountRate}</span>
+                  ) : (
+                    <Input
+                      type='number'
+                      value={discountRate}
+                      onChange={(e) => setDiscountRate(parseFloat(e.target.value) || 0)}
+                      className='h-8 w-16 text-right'
+                      min={0}
+                      max={100}
+                      step={0.5}
+                    />
+                  )}
                   <Percent className='h-4 w-4 text-muted-foreground' />
                 </div>
               </div>
@@ -823,15 +849,19 @@ export function BudgetEditor({ project, client, onSaveBudgetDetails, onApproveBu
               <div className='flex items-center gap-2'>
                 <span className='text-muted-foreground'>IVA</span>
                 <div className='flex items-center gap-1'>
-                  <Input
-                    type='number'
-                    value={taxRate}
-                    onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
-                    className='h-8 w-16 text-right'
-                    min={0}
-                    max={100}
-                    step={0.5}
-                  />
+                  {isReadOnly ? (
+                    <span className='font-mono'>{taxRate}</span>
+                  ) : (
+                    <Input
+                      type='number'
+                      value={taxRate}
+                      onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
+                      className='h-8 w-16 text-right'
+                      min={0}
+                      max={100}
+                      step={0.5}
+                    />
+                  )}
                   <Percent className='h-4 w-4 text-muted-foreground' />
                 </div>
               </div>

@@ -27,6 +27,7 @@ export function DetallesTab() {
   })
   const [isSaving, setIsSaving] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
 
   // Store initial data to compare for changes
   const initialDataRef = useRef<string | null>(null)
@@ -56,11 +57,11 @@ export function DetallesTab() {
 
   // Track changes by comparing current state to initial state
   useEffect(() => {
-    if (initialDataRef.current !== null) {
+    if (isInitialized && initialDataRef.current !== null) {
       const currentData = JSON.stringify(detallesData)
       setHasUnsavedChanges(currentData !== initialDataRef.current)
     }
-  }, [detallesData])
+  }, [detallesData, isInitialized])
 
   // Fetch oficinas to get colors
   useEffect(() => {
@@ -96,6 +97,7 @@ export function DetallesTab() {
     // Store initial state for change detection
     initialDataRef.current = JSON.stringify(newData)
     setHasUnsavedChanges(false)
+    setIsInitialized(true)
   }, [proyecto])
 
   const handleSave = async () => {

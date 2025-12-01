@@ -65,6 +65,7 @@ export function BillingTab({ project }: BillingTabProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
 
   // Store initial billing data to compare for changes
   const initialBillingDataRef = useRef<string | null>(null)
@@ -96,11 +97,11 @@ export function BillingTab({ project }: BillingTabProps) {
 
   // Track changes by comparing current state to initial state
   useEffect(() => {
-    if (billingData && initialBillingDataRef.current !== null) {
+    if (isInitialized && billingData && initialBillingDataRef.current !== null) {
       const currentData = JSON.stringify(billingData)
       setHasUnsavedChanges(currentData !== initialBillingDataRef.current)
     }
-  }, [billingData])
+  }, [billingData, isInitialized])
 
   // Get the approved budget from presupuestos
   const approvedBudget = useMemo(() => {
@@ -117,10 +118,12 @@ export function BillingTab({ project }: BillingTabProps) {
       // Store initial state for change detection
       initialBillingDataRef.current = JSON.stringify(data)
       setHasUnsavedChanges(false)
+      setIsInitialized(true)
     } catch (error) {
       console.error('Error fetching billing data:', error)
       setBillingData(null)
       initialBillingDataRef.current = null
+      setIsInitialized(true)
     } finally {
       setIsLoading(false)
     }

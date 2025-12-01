@@ -73,6 +73,7 @@ export function ResumenTab() {
   })
   const [isSaving, setIsSaving] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
 
   // Store initial data to compare for changes
   const initialDataRef = useRef<string | null>(null)
@@ -102,11 +103,11 @@ export function ResumenTab() {
 
   // Track changes by comparing current state to initial state
   useEffect(() => {
-    if (initialDataRef.current !== null) {
+    if (isInitialized && initialDataRef.current !== null) {
       const currentData = JSON.stringify(resumenData)
       setHasUnsavedChanges(currentData !== initialDataRef.current)
     }
-  }, [resumenData])
+  }, [resumenData, isInitialized])
 
   // Reset form data when proyecto changes
   useEffect(() => {
@@ -128,6 +129,7 @@ export function ResumenTab() {
     // Store initial state for change detection
     initialDataRef.current = JSON.stringify(newData)
     setHasUnsavedChanges(false)
+    setIsInitialized(true)
   }, [proyecto])
 
   const handleSave = async () => {
